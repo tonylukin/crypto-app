@@ -1,0 +1,105 @@
+version: '3'
+
+services:
+  php:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    container_name: ${APP_NAME:?err}-php
+    volumes:
+      - .:/var/www/html/:cached
+    environment:
+      PHP_IDE_CONFIG: "serverName=Docker"
+      XDEBUG_MODE: "debug"
+      XDEBUG_SESSION: "PHPSTORM"
+      XDEBUG_CONFIG: "client_host=192.168.1.50 client_port=9007 start_with_request=yes"
+
+  nginx:
+    image: nginx:latest
+    container_name: ${APP_NAME:?err}-nginx
+    links:
+      - 'php'
+    volumes:
+      - .:/var/www/html/
+      - ./docker/nginx:/etc/nginx/conf.d
+    ports:
+      - "8017:80"
+
+###> doctrine/doctrine-bundle ###
+  db:
+    image: mariadb
+    container_name: crypto-app-db
+    restart: always
+    ports:
+      - "127.0.0.1:3316:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./docker/my.cnf:/etc/mysql/my.cnf
+      - ./docker/db:/docker-entrypoint-initdb.d
+    networks:
+      - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: "1000"
+###< doctrine/doctrine-bundle ###
+
+  supervisor:
+    build:
+      context: ./docker/supervisor/
+      dockerfile: Dockerfile
+    container_name: ${APP_NAME:?err}-supervisor
+    working_dir: /application
+    restart: always
+    privileged: true
+    volumes:
+      - .:/var/www/html/
+      - ./docker/supervisor/php.ini:/etc/php/7.2/cli/php.ini
+      - ./docker/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
+    depends_on:
+      - db
+      - redis
+    networks:
+      - default
+    command:
+      - /bin/sh
+      - -c
+      - supervisord -c /etc/supervisor/supervisord.conf
+      #- supervisorctl -c /etc/supervisor/supervisord.conf
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: "1000"
+
+  redis:
+    container_name: ${APP_NAME:?err}-redis
+    image: redis:alpine
+    restart: always
+    ports:
+      - "127.0.0.1:6380:6379"
+    command: ["redis-server", "/usr/local/redis.conf"]
+    volumes:
+      - ./docker/redis/redis.conf:/usr/local/redis.conf
+      - redis-data:/data
+    networks:
+      - default
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10M"
+        max-file: "1000"
+
+volumes:
+  redis-data:
+    driver: local
+###> doctrine/doctrine-bundle ###
+  db-data:
+###< doctrine/doctrine-bundle ###
+
+networks:
+  default:
+    driver: bridge

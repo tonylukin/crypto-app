@@ -7,7 +7,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
-#[ORM\Index(name: "ix_price_datetime_symbol", fields: ["symbol", "status", "exchange"])]
+#[ORM\Index(name: "ix_order_symbol_status_exchange", fields: ["symbol", "status", "exchange"])]
 class Order
 {
     public const EXCHANGE_BINANCE = 'binance';
@@ -19,9 +19,6 @@ class Order
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id;
-
-    #[ORM\Column(type: 'string', length: 16)]
-    private ?string $symbol;
 
     #[ORM\Column(type: 'string', length: 16)]
     private string $exchange = self::EXCHANGE_BINANCE;
@@ -47,6 +44,9 @@ class Order
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $saleDate = null;
 
+    #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol", inversedBy: "orders")]
+    private Symbol $symbol;
+
     public function __construct()
     {
         $this->created_at = new \DateTimeImmutable();
@@ -57,12 +57,12 @@ class Order
         return $this->id;
     }
 
-    public function getSymbol(): ?string
+    public function getSymbol(): Symbol
     {
         return $this->symbol;
     }
 
-    public function setSymbol(string $symbol): self
+    public function setSymbol(Symbol $symbol): self
     {
         $this->symbol = $symbol;
 

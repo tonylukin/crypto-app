@@ -6,7 +6,7 @@ use App\Repository\PriceRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: PriceRepository::class)]
-#[ORM\Index(name: "ix_price_datetime_symbol", fields: ["datetime", "symbol"])]
+#[ORM\UniqueConstraint(name: "ix_price_datetime_symbol", fields: ["datetime", "symbol"])]
 class Price
 {
     public const EXCHANGE_BINANCE = Order::EXCHANGE_BINANCE;
@@ -23,10 +23,10 @@ class Price
     private ?float $price;
 
     #[ORM\Column(type: 'string', length: 16)]
-    private ?string $symbol;
-
-    #[ORM\Column(type: 'string', length: 16)]
     private ?string $exchange = self::EXCHANGE_BINANCE;
+
+    #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol")]
+    private Symbol $symbol;
 
     public function getId(): ?int
     {
@@ -57,12 +57,12 @@ class Price
         return $this;
     }
 
-    public function getSymbol(): ?string
+    public function getSymbol(): Symbol
     {
         return $this->symbol;
     }
 
-    public function setSymbol(string $symbol): self
+    public function setSymbol(Symbol $symbol): self
     {
         $this->symbol = $symbol;
 

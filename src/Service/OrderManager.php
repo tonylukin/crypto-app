@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Order;
+use App\Entity\Symbol;
 use App\Repository\OrderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -22,7 +23,7 @@ class OrderManager
     )
     {}
 
-    public function buy(string $symbol, float $totalPrice): bool
+    public function buy(Symbol $symbol, float $totalPrice): bool
     {
         $price = $this->bestPriceAnalyzer->getBestPriceForOrder($symbol);
         if ($price === null) {
@@ -48,7 +49,7 @@ class OrderManager
             ;
             $this->entityManager->persist($order);
             $this->entityManager->flush();
-            $this->api->buyLimit($symbol, $quantity, $price);
+            $this->api->buyLimit($symbol->getName(), $quantity, $price);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {
@@ -57,11 +58,11 @@ class OrderManager
             return false;
         }
 
-        $this->logger->info("Buy order created for {$price} {$symbol}");
+        $this->logger->info("Buy order created for {$price} {$symbol->getName()}");
         return true;
     }
 
-    public function sell(string $symbol): bool
+    public function sell(Symbol $symbol): bool
     {
         $price = $this->bestPriceAnalyzer->getBestPriceForSale($symbol);
         if ($price === null) {
@@ -77,7 +78,7 @@ class OrderManager
         }
         $profit = $this->bestPriceAnalyzer->getPriceProfit($pendingOrder, $price);
         if ($profit === null) {
-            $this->logger->info("Profit is too low, price: {$price} {$symbol}", ['method' => __METHOD__]);
+            $this->logger->info("Profit is too low, price: {$price} {$symbol->getName()}", ['method' => __METHOD__]);
             return false;
         }
 
@@ -91,7 +92,7 @@ class OrderManager
                 ->setSaleDate(new \DateTimeImmutable())
             ;
             $this->entityManager->flush();
-            $this->api->sellLimit($symbol, $pendingOrder->getQuantity(), $price);
+            $this->api->sellLimit($symbol->getName(), $pendingOrder->getQuantity(), $price);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {
@@ -100,7 +101,7 @@ class OrderManager
             return false;
         }
 
-        $this->logger->info("Sell order created for {$price} {$symbol}");
+        $this->logger->info("Sell order created for {$price} {$symbol->getName()}");
         return true;
     }
 }

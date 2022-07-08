@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Order;
+use App\Entity\Symbol;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -39,7 +40,7 @@ class OrderRepository extends ServiceEntityRepository
         }
     }
 
-    public function findPendingOrder(string $symbol): ?Order
+    public function findPendingOrder(Symbol $symbol): ?Order
     {
         return $this->findOneBy(['symbol' => $symbol, 'status' => Order::STATUS_BUY]);
     }

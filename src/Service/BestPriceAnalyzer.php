@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Order;
+use App\Entity\Symbol;
 use App\Repository\PriceRepository;
-use App\Repository\SymbolRepository;
 use Psr\Log\LoggerInterface;
 
 class BestPriceAnalyzer
@@ -19,16 +19,21 @@ class BestPriceAnalyzer
     private const DIRECTION_PRICE_FALLING_DOWN = -1;
 
     public function __construct(
-        private SymbolRepository $symbolRepository,
         private PriceRepository $priceRepository,
         private ApiInterface $api,
         private LoggerInterface $logger
     ) {
     }
 
-    public function getBestPriceForOrder(string $symbol): ?float
+    public function getBestPriceForOrder(Symbol $symbol): ?float
     {
-        $currentPrice = $this->api->price($symbol);
+        // don't set order before some history obtained
+        $pricesCount = $this->priceRepository->count(['symbol' => $symbol]);
+        if ($pricesCount < 6) {
+            return null;
+        }
+
+        $currentPrice = $this->api->price($symbol->getName());
         if ($this->isPriceOnFallingDown($symbol, $currentPrice)) {
             return null;
         }
@@ -42,9 +47,9 @@ class BestPriceAnalyzer
         return null;
     }
 
-    public function getBestPriceForSale(string $symbol): ?float
+    public function getBestPriceForSale(Symbol $symbol): ?float
     {
-        $currentPrice = $this->api->price($symbol);
+        $currentPrice = $this->api->price($symbol->getName());
 
         if ($this->isBestPriceForDirectionUntilPlato($symbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)
             || $this->isPriceOnMovingRecentlyChangedDirection($symbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)) {
@@ -54,7 +59,7 @@ class BestPriceAnalyzer
         return null;
     }
 
-    private function isBestPriceForDirectionUntilPlato(string $symbol, float $price, int $direction): bool
+    private function isBestPriceForDirectionUntilPlato(Symbol $symbol, float $price, int $direction): bool
     {
         $avgPriceShortInterval = $this
             ->priceRepository
@@ -74,31 +79,26 @@ class BestPriceAnalyzer
             return false;
         }
 
-        $this->logger->warning("Price on plato: {$price} {$symbol}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
+        $this->logger->warning("Price on plato: {$price} {$symbol->getName()}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
         return true;
     }
 
-    private function isPriceOnRisingUp(string $symbol, float $price): bool
+    private function isPriceOnRisingUp(Symbol $symbol, float $price): bool
     {
         // todo как-то контролировать, что мы можем упереться в потолок и ставка не будет перебита никогда
         // todo ставить какие-то лимиты на покупку на таких подъемах, т.к. это риск
-        // todo add flag that allows to use orders with this option due to risk
         return $this->isPriceMovingOnShortInterval($symbol, $price, self::DIRECTION_PRICE_RISING_UP);
     }
 
-    private function isPriceOnFallingDown(string $symbol, float $price): bool
+    private function isPriceOnFallingDown(Symbol $symbol, float $price): bool
     {
         return $this->isPriceMovingOnShortInterval($symbol, $price, self::DIRECTION_PRICE_FALLING_DOWN);
     }
 
-    private function isPriceMovingOnShortInterval(string $symbol, float $price, int $direction): bool
+    private function isPriceMovingOnShortInterval(Symbol $symbol, float $price, int $direction): bool
     {
-        $symbolEntity = $this
-            ->symbolRepository
-            ->findByName($symbol)
-        ;
-        if ($symbolEntity !== null && !$symbolEntity->isRiskable()) {
-            $this->logger->warning("Symbol {$symbol} not risky");
+        if (!$symbol->isRiskable()) {
+            $this->logger->warning("Symbol {$symbol->getName()} not risky");
             return false;
         }
         $avgPriceShortInterval = $this
@@ -118,11 +118,11 @@ class BestPriceAnalyzer
             return false;
         }
 
-        $this->logger->warning("Price on short interval: {$price} {$symbol}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
+        $this->logger->warning("Price on short interval: {$price} {$symbol->getName()}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
         return true;
     }
 
-    private function isPriceOnMovingRecentlyChangedDirection(string $symbol, float $price, int $direction): bool
+    private function isPriceOnMovingRecentlyChangedDirection(Symbol $symbol, float $price, int $direction): bool
     {
         $avgPrice = $this
             ->priceRepository
@@ -133,7 +133,7 @@ class BestPriceAnalyzer
         ;
         // смотрим последнюю цену и сравниваем с нашей, одинаковые знаки - значит сменилось направление
         if (($avgPrice - $price) * $direction > 0) {
-            $this->logger->warning("Price recently changed direction: {$price} {$symbol}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
+            $this->logger->warning("Price recently changed direction: {$price} {$symbol->getName()}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
             return true;
         }
 
@@ -143,7 +143,7 @@ class BestPriceAnalyzer
     /**
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
-    private function checkDirection(string $symbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
+    private function checkDirection(Symbol $symbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
     {
         $avgPriceShortInterval = $this
             ->priceRepository

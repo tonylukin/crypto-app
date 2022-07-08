@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use App\Entity\Price;
+use App\Entity\Symbol;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 
@@ -11,6 +12,11 @@ class PriceFixture extends Fixture
     public const PRICE_TO_TOP_SYMBOL = 'SOLBUSD';
     public const PRICE_TO_BOTTOM_SYMBOL = 'SOL2BUSD';
     public const PRICE_TOP_BOTTOM_TOP_SYMBOL = 'ETHBUSD';
+    private const SYMBOLS = [
+        self::PRICE_TO_TOP_SYMBOL,
+        self::PRICE_TO_BOTTOM_SYMBOL,
+        self::PRICE_TOP_BOTTOM_TOP_SYMBOL,
+    ];
 
     private const CHANGING_PRICE_15_PERCENT_UP = [
         [28.49,'SOLBUSD'],
@@ -163,10 +169,12 @@ class PriceFixture extends Fixture
         $currentDate = new \DateTime();
         $currentDate->modify('+1 hour')->setTime($currentDate->format('H'), 0);
 
+        $symbols = $this->createSymbols($manager);
+
         $date = clone $currentDate;
         foreach (array_reverse(self::CHANGING_PRICE_15_PERCENT_UP) as $item) {
             [$priceValue, $symbol] = $item;
-            $price = $this->createPriceEntity($priceValue, $symbol, $date);
+            $price = $this->createPriceEntity($priceValue, $symbols[$symbol], $date);
             $manager->persist($price);
         }
         $manager->flush();
@@ -174,7 +182,7 @@ class PriceFixture extends Fixture
         $date = clone $currentDate;
         foreach (self::CHANGING_PRICE_15_PERCENT_UP as $item) {
             [$priceValue] = $item;
-            $price = $this->createPriceEntity($priceValue, self::PRICE_TO_BOTTOM_SYMBOL, $date);
+            $price = $this->createPriceEntity($priceValue, $symbols[self::PRICE_TO_BOTTOM_SYMBOL], $date);
             $manager->persist($price);
         }
         $manager->flush();
@@ -182,13 +190,13 @@ class PriceFixture extends Fixture
 
         $date = clone $currentDate;
         foreach (self::CHANGING_PRICE_TOP_BOTTOM_TOP as $priceValue) {
-            $price = $this->createPriceEntity($priceValue, self::PRICE_TOP_BOTTOM_TOP_SYMBOL, $date);
+            $price = $this->createPriceEntity($priceValue, $symbols[self::PRICE_TOP_BOTTOM_TOP_SYMBOL], $date);
             $manager->persist($price);
         }
         $manager->flush();
     }
 
-    private function createPriceEntity(float $priceValue, string $symbol, \DateTimeInterface $currentDate): Price
+    private function createPriceEntity(float $priceValue, Symbol $symbol, \DateTimeInterface $currentDate): Price
     {
         $price = new Price();
         $price
@@ -197,5 +205,21 @@ class PriceFixture extends Fixture
             ->setDatetime(clone $currentDate->modify('-1 hour'))
         ;
         return $price;
+    }
+
+    /**
+     * @return Symbol[]
+     */
+    private function createSymbols(ObjectManager $manager): array
+    {
+        $data = [];
+        foreach (self::SYMBOLS as $symbolName) {
+            $data[$symbolName] = (new Symbol())
+                ->setName($symbolName)
+            ;
+            $manager->persist($data[$symbolName]);
+        }
+
+        return $data;
     }
 }

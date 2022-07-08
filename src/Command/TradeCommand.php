@@ -34,11 +34,10 @@ class TradeCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $symbols = $this->symbolRepository->getActiveList();
-        foreach ($symbols as $symbol) {
+        $symbols = $this->symbolRepository->getActiveList();foreach ($symbols as $symbol) {
             $this->io->writeln("Start trading for {$symbol->getName()}");
-            $this->orderManager->buy($symbol->getName(), $symbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);
-            $this->orderManager->sell($symbol->getName());
+            $this->orderManager->buy($symbol, $symbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);
+            $this->orderManager->sell($symbol);
         }
 
         return 0;

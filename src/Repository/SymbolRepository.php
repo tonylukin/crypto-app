@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Order;
 use App\Entity\Symbol;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -44,10 +45,11 @@ class SymbolRepository extends ServiceEntityRepository
      */
     public function getActiveList(): array
     {
-        // todo add pending orders symbols
-        // todo use order and price foreign key for symbol instead of symbol keyword
-        return $this->createQueryBuilder('symbol')
+        return $this->createQueryBuilder('symbol', 'symbol.name')
+            ->leftJoin('symbol.orders', 'orders')
             ->where('symbol.active = true')
+            ->orWhere('orders.status = :status')
+            ->setParameter('status', Order::STATUS_BUY)
             ->getQuery()
             ->getResult()
         ;

@@ -24,7 +24,7 @@ class PriceSaver
             $priceValue = $this->api->price($symbol->getName());
             $price = (new Price())
                 ->setPrice($priceValue)
-                ->setSymbol($symbol->getName())
+                ->setSymbol($symbol)
                 ->setDatetime($dateTime)
             ;
             $this->entityManager->persist($price);

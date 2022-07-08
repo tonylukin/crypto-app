@@ -3,13 +3,14 @@
 namespace App\Entity;
 
 use App\Repository\SymbolRepository;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SymbolRepository::class)]
 #[ORM\UniqueConstraint(name: "ix_symbol_name", fields: ["name"])]
 class Symbol
 {
-    public const DEFAULT_TOTAL_PRICE_USD = 300;
+    public const DEFAULT_TOTAL_PRICE_USD = 100;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -27,6 +28,9 @@ class Symbol
 
     #[ORM\Column(type: 'float', nullable: true)]
     private ?float $totalPrice = null;
+
+    #[ORM\OneToMany(targetEntity: "App\Entity\Order", mappedBy: "symbol")]
+    private Collection $orders;
 
     public function getId(): ?int
     {
@@ -81,4 +85,11 @@ class Symbol
         return $this;
     }
 
+    /**
+     * @return Collection|Order[]
+     */
+    public function getOrders(): Collection
+    {
+        return $this->orders;
+    }
 }

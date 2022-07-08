@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Price;
+use App\Entity\Symbol;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -42,7 +43,7 @@ class PriceRepository extends ServiceEntityRepository
     /**
      * @return Price[]
      */
-    public function getLastItemsForInterval(\DateInterval $dateInterval, ?string $symbol = null): array
+    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null): array
     {
         $qb = $this->createQueryBuilder('price')
             ->where('price.datetime >= :dateTime')
@@ -60,7 +61,7 @@ class PriceRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getAvgForInterval(\DateInterval $dateInterval, string $symbol): ?float
+    public function getAvgForInterval(\DateInterval $dateInterval, Symbol $symbol): ?float
     {
         $qb = $this->createQueryBuilder('price')
             ->select('AVG(price.price) AS avgPrice')

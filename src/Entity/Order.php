@@ -36,20 +36,26 @@ class Order
     private ?float $profit;
 
     #[ORM\Column(type: 'datetime_immutable')]
-    private ?\DateTimeImmutable $created_at;
+    private ?\DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'float', nullable: true)]
-    private ?float $salePrice = null;
+    private ?float $sellPrice = null;
 
-    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
-    private ?\DateTimeImmutable $saleDate = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true, options: ['default' => null])]
+    private ?\DateTimeImmutable $sellDate = null;
 
     #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol", inversedBy: "orders")]
     private Symbol $symbol;
 
+    #[ORM\Column(type: 'string', length: 64, nullable: true)]
+    private ?string $buyReason = null;
+
+    #[ORM\Column(type: 'string', length: 64, nullable: true)]
+    private ?string $sellReason = null;
+
     public function __construct()
     {
-        $this->created_at = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -131,36 +137,60 @@ class Order
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {
-        return $this->created_at;
+        return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $created_at): self
+    public function setCreatedAt(\DateTimeImmutable $createdAt): self
     {
-        $this->created_at = $created_at;
+        $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getSalePrice(): ?float
+    public function getSellPrice(): ?float
     {
-        return $this->salePrice;
+        return $this->sellPrice;
     }
 
-    public function setSalePrice(?float $salePrice): self
+    public function setSellPrice(?float $sellPrice): self
     {
-        $this->salePrice = $salePrice;
+        $this->sellPrice = $sellPrice;
 
         return $this;
     }
 
-    public function getSaleDate(): ?\DateTimeInterface
+    public function getSellDate(): ?\DateTimeInterface
     {
-        return $this->saleDate;
+        return $this->sellDate;
     }
 
-    public function setSaleDate(?\DateTimeInterface $saleDate): self
+    public function setSellDate(?\DateTimeInterface $sellDate): self
     {
-        $this->saleDate = $saleDate;
+        $this->sellDate = $sellDate;
+
+        return $this;
+    }
+
+    public function getBuyReason(): ?string
+    {
+        return $this->buyReason;
+    }
+
+    public function setBuyReason(?string $buyReason): self
+    {
+        $this->buyReason = $buyReason;
+
+        return $this;
+    }
+
+    public function getSellReason(): ?string
+    {
+        return $this->sellReason;
+    }
+
+    public function setSellReason(?string $sellReason): self
+    {
+        $this->sellReason = $sellReason;
 
         return $this;
     }

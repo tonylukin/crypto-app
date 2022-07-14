@@ -25,16 +25,16 @@ class OrderManager
 
     public function buy(Symbol $symbol, float $totalPrice): bool
     {
-        $price = $this->bestPriceAnalyzer->getBestPriceForOrder($symbol);
-        if ($price === null) {
-            return false;
-        }
-
         $pendingOrder = $this
             ->orderRepository
             ->findPendingOrder($symbol)
         ;
         if ($pendingOrder !== null) {
+            return false;
+        }
+
+        $price = $this->bestPriceAnalyzer->getBestPriceForOrder($symbol);
+        if ($price === null) {
             return false;
         }
 
@@ -46,10 +46,14 @@ class OrderManager
                 ->setSymbol($symbol)
                 ->setPrice($price)
                 ->setQuantity($quantity)
+                ->setBuyReason($this->bestPriceAnalyzer->getReason())
             ;
             $this->entityManager->persist($order);
             $this->entityManager->flush();
-            $this->api->buyLimit($symbol->getName(), $quantity, $price);
+            $response = $this->api->buyLimit($symbol->getName(), $quantity, $price);
+            if (!empty($response)) {
+                $this->logger->warning('Buy response', ['response' => $response]);
+            }
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {
@@ -64,11 +68,6 @@ class OrderManager
 
     public function sell(Symbol $symbol): bool
     {
-        $price = $this->bestPriceAnalyzer->getBestPriceForSale($symbol);
-        if ($price === null) {
-            return false;
-        }
-
         $pendingOrder = $this
             ->orderRepository
             ->findPendingOrder($symbol)
@@ -76,6 +75,12 @@ class OrderManager
         if ($pendingOrder === null) {
             return false;
         }
+
+        $price = $this->bestPriceAnalyzer->getBestPriceForSale($symbol);
+        if ($price === null) {
+            return false;
+        }
+
         $profit = $this->bestPriceAnalyzer->getPriceProfit($pendingOrder, $price);
         if ($profit === null) {
             $this->logger->info("Profit is too low, price: {$price} {$symbol->getName()}", ['method' => __METHOD__]);
@@ -88,11 +93,15 @@ class OrderManager
             $pendingOrder
                 ->setStatus(Order::STATUS_SALE)
                 ->setProfit($profit)
-                ->setSalePrice($price)
-                ->setSaleDate(new \DateTimeImmutable())
+                ->setSellPrice($price)
+                ->setSellDate(new \DateTimeImmutable())
+                ->setSellReason($this->bestPriceAnalyzer->getReason())
             ;
             $this->entityManager->flush();
-            $this->api->sellLimit($symbol->getName(), $pendingOrder->getQuantity(), $price);
+            $response = $this->api->sellLimit($symbol->getName(), $pendingOrder->getQuantity(), $price);
+            if (!empty($response)) {
+                $this->logger->warning('Sell response', ['response' => $response]);
+            }
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {

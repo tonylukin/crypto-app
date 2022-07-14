@@ -14,9 +14,16 @@ class BestPriceAnalyzer
     private const HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES = 'PT4H';
     private const DAYS_SHORT_INTERVAL_FOR_PRICES = 'P1D';
     private const MAX_PERCENT_DIFF_ON_MOVING = 3;
+    private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 6;
 
     private const DIRECTION_PRICE_RISING_UP = 1;
     private const DIRECTION_PRICE_FALLING_DOWN = -1;
+
+    private const PRICE_IS_ON_PLATO = 'Price is on plato';
+    private const PRICE_MOVING_ON_SHORT_INTERVAL = 'Price moving on short interval';
+    private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
+
+    private ?string $reason = null;
 
     public function __construct(
         private PriceRepository $priceRepository,
@@ -29,7 +36,7 @@ class BestPriceAnalyzer
     {
         // don't set order before some history obtained
         $pricesCount = $this->priceRepository->count(['symbol' => $symbol]);
-        if ($pricesCount < 6) {
+        if ($pricesCount < self::MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER) {
             return null;
         }
 
@@ -79,14 +86,12 @@ class BestPriceAnalyzer
             return false;
         }
 
-        $this->logger->warning("Price on plato: {$price} {$symbol->getName()}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
+        $this->reason = $this->buildReason(self::PRICE_IS_ON_PLATO, $price, $symbol, $direction);
         return true;
     }
 
     private function isPriceOnRisingUp(Symbol $symbol, float $price): bool
     {
-        // todo как-то контролировать, что мы можем упереться в потолок и ставка не будет перебита никогда
-        // todo ставить какие-то лимиты на покупку на таких подъемах, т.к. это риск
         return $this->isPriceMovingOnShortInterval($symbol, $price, self::DIRECTION_PRICE_RISING_UP);
     }
 
@@ -97,7 +102,7 @@ class BestPriceAnalyzer
 
     private function isPriceMovingOnShortInterval(Symbol $symbol, float $price, int $direction): bool
     {
-        if (!$symbol->isRiskable()) {
+        if (!$symbol->isRiskable() && $direction === self::DIRECTION_PRICE_RISING_UP) {
             $this->logger->warning("Symbol {$symbol->getName()} not risky");
             return false;
         }
@@ -118,7 +123,10 @@ class BestPriceAnalyzer
             return false;
         }
 
-        $this->logger->warning("Price on short interval: {$price} {$symbol->getName()}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
+        // записываем причину только для повышения (они же только рисковые), поскольку тут произойдет покупка
+        if ($direction === self::DIRECTION_PRICE_RISING_UP) {
+            $this->reason = $this->buildReason(self::PRICE_MOVING_ON_SHORT_INTERVAL, $price, $symbol, $direction);
+        }
         return true;
     }
 
@@ -133,7 +141,7 @@ class BestPriceAnalyzer
         ;
         // смотрим последнюю цену и сравниваем с нашей, одинаковые знаки - значит сменилось направление
         if (($avgPrice - $price) * $direction > 0) {
-            $this->logger->warning("Price recently changed direction: {$price} {$symbol->getName()}", ['direction' => $direction > 0 ? 'rising up' : 'falling down']);
+            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $symbol, $direction);
             return true;
         }
 
@@ -166,8 +174,8 @@ class BestPriceAnalyzer
             return null;
         }
 
-        // todo set symbol inactive for this case
         if ($pendingOrder->getCreatedAt()->modify('+2 weeks') <= new \DateTimeImmutable()) {
+            $pendingOrder->getSymbol()->setActive(false);
             return $profit;
         }
 
@@ -177,5 +185,15 @@ class BestPriceAnalyzer
         }
 
         return $profit;
+    }
+
+    public function getReason(): ?string
+    {
+        return $this->reason;
+    }
+
+    private function buildReason(string $reason, float $price, Symbol $symbol, int $direction): string
+    {
+        return \sprintf('%s: %s %s [%s]', $reason, $price, $symbol->getName(), $direction > 0 ? 'rising up' : 'falling down');
     }
 }

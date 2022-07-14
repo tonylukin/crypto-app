@@ -20,10 +20,10 @@ class Symbol
     #[ORM\Column(type: 'string', length: 32)]
     private ?string $name = null;
 
-    #[ORM\Column(type: 'boolean')]
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
     private bool $active = true;
 
-    #[ORM\Column(type: 'boolean')]
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $riskable = false;
 
     #[ORM\Column(type: 'float', nullable: true)]
@@ -86,7 +86,8 @@ class Symbol
     }
 
     /**
-     * @return Collection|Order[]
+     * @see SymbolRepository::getActiveList()
+     * @return Collection<Order>
      */
     public function getOrders(): Collection
     {

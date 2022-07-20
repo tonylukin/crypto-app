@@ -55,8 +55,12 @@ class SymbolRepository extends ServiceEntityRepository
         ;
     }
 
-    public function findByName(string $symbol): ?Symbol
+    /**
+     * @param string[] $symbols
+     * @return Symbol[]
+     */
+    public function findByName(array $symbols): array
     {
-        return $this->findOneBy(['name' => $symbol]);
+        return $this->findBy(['name' => $symbols]);
     }
 }

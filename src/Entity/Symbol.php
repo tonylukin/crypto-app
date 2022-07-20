@@ -61,6 +61,9 @@ class Symbol
         return $this;
     }
 
+    /**
+     * Если валюта рисковая, значит ее можно покупать на подъеме, надеясь, что она еще больше вырастет
+     */
     public function isRiskable(): ?bool
     {
         return $this->riskable;

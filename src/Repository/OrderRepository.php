@@ -42,6 +42,6 @@ class OrderRepository extends ServiceEntityRepository
 
     public function findPendingOrder(Symbol $symbol): ?Order
     {
-        return $this->findOneBy(['symbol' => $symbol, 'status' => Order::STATUS_BUY]);
+        return $this->findOneBy(['symbol' => $symbol, 'status' => Order::STATUS_BUY], ['id' => 'DESC']);
     }
 }

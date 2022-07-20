@@ -32,6 +32,7 @@ class ImportPricesCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output): int
     {
+        // todo write command to remove old prices
         $this->io->writeln('Start prices import');
         $this->priceSaver->savePrices();
         $this->io->writeln('Finish prices import');

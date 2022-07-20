@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
-    public const MINIMAL_PROFIT_PERCENT = 3;
+    public const MINIMAL_PROFIT_PERCENT = 5;
 
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -38,9 +38,8 @@ class OrderManager
             return false;
         }
 
-        $quantity = round($totalPrice / $price, 4);
+        $quantity = round($totalPrice / $price, $price > 10000 ? 4 : 2);
         $this->entityManager->beginTransaction();
-        // todo use some multiplier for $price to buy chipper
         try {
             $order = (new Order())
                 ->setSymbol($symbol)
@@ -51,9 +50,7 @@ class OrderManager
             $this->entityManager->persist($order);
             $this->entityManager->flush();
             $response = $this->api->buyLimit($symbol->getName(), $quantity, $price);
-            if (!empty($response)) {
-                $this->logger->warning('Buy response', ['response' => $response]);
-            }
+            $this->logger->warning('Buy response', ['response' => $response]);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {
@@ -89,7 +86,6 @@ class OrderManager
 
         $this->entityManager->beginTransaction();
         try {
-            // todo use some multiplier for $price to sell more expensive
             $pendingOrder
                 ->setStatus(Order::STATUS_SALE)
                 ->setProfit($profit)
@@ -99,9 +95,7 @@ class OrderManager
             ;
             $this->entityManager->flush();
             $response = $this->api->sellLimit($symbol->getName(), $pendingOrder->getQuantity(), $price);
-            if (!empty($response)) {
-                $this->logger->warning('Sell response', ['response' => $response]);
-            }
+            $this->logger->warning('Sell response', ['response' => $response]);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {

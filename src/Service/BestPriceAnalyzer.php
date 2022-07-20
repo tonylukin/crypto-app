@@ -141,7 +141,7 @@ class BestPriceAnalyzer
         ;
         // смотрим последнюю цену и сравниваем с нашей, одинаковые знаки - значит сменилось направление
         if (($avgPrice - $price) * $direction > 0) {
-            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $symbol, $direction);
+            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $symbol, $direction * -1);
             return true;
         }
 

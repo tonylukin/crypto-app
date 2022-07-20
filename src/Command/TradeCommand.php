@@ -9,6 +9,7 @@ use App\Repository\SymbolRepository;
 use App\Service\OrderManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -32,9 +33,23 @@ class TradeCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
     }
 
+    protected function configure()
+    {
+        $this
+            ->setDescription('Main command for buy and sell currencies.')
+            ->addOption('symbols', null, InputOption::VALUE_OPTIONAL, 'The specific symbols for buy/sell separated by comma.')
+        ;
+    }
+
     public function execute(InputInterface $input, OutputInterface $output): int
     {
-        $symbols = $this->symbolRepository->getActiveList();
+        $symbols = $input->getOption('symbols');
+        if ($symbols !== null) {
+            $symbols = $this->symbolRepository->findByName(explode(',', $symbols));
+        } else {
+            $symbols = $this->symbolRepository->getActiveList();
+        }
+
         foreach ($symbols as $symbol) {
             $this->io->writeln("Start trading for {$symbol->getName()}");
             $this->orderManager->buy($symbol, $symbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);

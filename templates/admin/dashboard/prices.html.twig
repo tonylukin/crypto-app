@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+{# @var \App\Entity\Symbol symbol #}
+{# @var array prices #}
+{# @var array orders #}
+{# @var int daysAgo #}
+
+{% block title %}Prices{% endblock %}
+
+{% block body %}
+    <form class="row mt-3 mb-3">
+        <div class="col-sm-4">
+            <div class="row">
+                <label for="daysAgo" class="col-sm-3 col-form-label">Days ago</label>
+                <div class="col-sm-9">
+                  <input type="number" class="form-control" name="days-ago" id="daysAgo" value="{{ daysAgo }}">
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <button class="btn btn-primary" type="submit">Submit</button>
+        </div>
+    </form>
+    <canvas id="prices" width="400" height="400"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+      const prices = {{ prices|map(price => {x: price.datetime|date('Y-m-d H:m'), y: price.price})|json_encode|raw }};
+      const config = {
+        type: 'line',
+        data: {
+            datasets: [
+                {
+                    label: 'Цены',
+                    data: prices,
+                    cubicInterpolationMode: 'monotone',
+                    borderColor: '#d4a817',
+                },
+            {% for order in orders -%}
+                {
+                    label: 'Ордер {{ order.id }}',
+                    data: [
+                      {x: '{{ order.createdAt|date('Y-m-d H:m') }}', y: {{ order.price }} },
+                      {x: '{{ order.sellDate|date('Y-m-d H:m') }}', y: {{ order.sellPrice }} },
+                    ],
+                    cubicInterpolationMode: 'monotone',
+                    borderColor: '#{{ "%06d"|format(random(0, 999999)) }}',
+                },
+            {%- endfor %}
+            ]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'x',
+                intersect: true,
+            }
+        }
+      };
+      new Chart(document.getElementById('prices'), config);
+    </script>
+{% endblock %}

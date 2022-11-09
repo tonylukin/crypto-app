@@ -52,6 +52,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
         yield [31.95, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is falling down
         yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is a plato but after rising
         yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // price is match because is rising up
+        yield [1596.09, PriceFixture::NOT_RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is not changed direction
     }
 
     /**
@@ -75,7 +76,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
     public function priceForSaleProvider(): \Generator
     {
         // avg price = 37.29, last price = 37.13
-        yield [21.95, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // price is match because have recently changed direction
+//        yield [21.95, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // Плохой тест, идет цена и вдруг падает вниз, это не разворот. price is match because have recently changed direction
         yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // price is match because is a plato
         yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is still rising up
         // avg price = , last price = 28.49
@@ -83,7 +84,6 @@ class BestPriceAnalyzerTest extends KernelTestCase
         yield [29.5, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, true]; // price is match because is a plato
         // avg price = , last price = 1082.77
         yield [1080, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true];
-        yield [900, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true];
-        yield [1090, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, false];
+        yield [1090, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true];
     }
 }

@@ -38,7 +38,7 @@ class OrderManager
             return false;
         }
 
-        $quantity = round($totalPrice / $price, $price > 10000 ? 4 : 2);
+        $quantity = round($totalPrice / $price, $price > 1000 ? 4 : 2);
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())
@@ -55,7 +55,11 @@ class OrderManager
 
         } catch (\Throwable $e) {
             $this->entityManager->rollback();
-            $this->logger->error($e->getMessage(), ['method' => __METHOD__]);
+            $this->logger->error($e->getMessage(), [
+                'symbol' => $symbol->getName(),
+                'totalPrice' => $quantity * $price,
+                'method' => __METHOD__
+            ]);
             return false;
         }
 
@@ -87,7 +91,7 @@ class OrderManager
         $this->entityManager->beginTransaction();
         try {
             $pendingOrder
-                ->setStatus(Order::STATUS_SALE)
+                ->setStatus(Order::STATUS_SELL)
                 ->setProfit($profit)
                 ->setSellPrice($price)
                 ->setSellDate(new \DateTimeImmutable())
@@ -100,7 +104,11 @@ class OrderManager
 
         } catch (\Throwable $e) {
             $this->entityManager->rollback();
-            $this->logger->error($e->getMessage(), ['method' => __METHOD__]);
+            $this->logger->error($e->getMessage(), [
+                'symbol' => $symbol->getName(),
+                'totalPrice' => $pendingOrder->getQuantity() * $price,
+                'method' => __METHOD__
+            ]);
             return false;
         }
 

@@ -48,7 +48,7 @@ class PriceRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('price')
             ->where('price.datetime >= :dateTime')
             ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
-            ->orderBy('price.datetime', 'DESC')
+            ->orderBy('price.datetime', 'ASC')
             ->addOrderBy('price.symbol')
         ;
         if ($symbol !== null) {

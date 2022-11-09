@@ -44,4 +44,27 @@ class OrderRepository extends ServiceEntityRepository
     {
         return $this->findOneBy(['symbol' => $symbol, 'status' => Order::STATUS_BUY], ['id' => 'DESC']);
     }
+
+    /**
+     * @return Order[]
+     */
+    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null): array
+    {
+        $qb = $this->createQueryBuilder('o')
+            ->where('o.createdAt >= :dateTime')
+            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->andWhere('o.status = :status')
+            ->setParameter('status', Order::STATUS_SELL)
+            ->orderBy('o.id', 'ASC')
+            ->addOrderBy('o.symbol')
+        ;
+        if ($symbol !== null) {
+            $qb
+                ->andWhere('o.symbol = :symbol')
+                ->setParameter('symbol', $symbol)
+            ;
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

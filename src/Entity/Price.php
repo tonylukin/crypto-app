@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\PriceRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PriceRepository::class)]
 #[ORM\UniqueConstraint(name: "ix_price_datetime_symbol", fields: ["datetime", "symbol"])]
@@ -17,9 +18,11 @@ class Price
     private ?int $id;
 
     #[ORM\Column(type: 'datetime')]
+    #[Groups(['price_details'])]
     private ?\DateTimeInterface $datetime;
 
     #[ORM\Column(type: 'float')]
+    #[Groups(['price_details'])]
     private ?float $price;
 
     #[ORM\Column(type: 'string', length: 16)]

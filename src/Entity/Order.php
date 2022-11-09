@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\OrderRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -13,11 +14,12 @@ class Order
     public const EXCHANGE_BINANCE = 'binance';
 
     public const STATUS_BUY = 'buy';
-    public const STATUS_SALE = 'sale';
+    public const STATUS_SELL = 'sale';
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['order_price_details'])]
     private ?int $id;
 
     #[ORM\Column(type: 'string', length: 16)]
@@ -27,6 +29,7 @@ class Order
     private ?float $quantity;
 
     #[ORM\Column(type: 'float')]
+    #[Groups(['order_price_details'])]
     private ?float $price;
 
     #[ORM\Column(type: 'string', length: 16)]
@@ -36,21 +39,25 @@ class Order
     private ?float $profit;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['order_price_details'])]
     private ?\DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'float', nullable: true)]
+    #[Groups(['order_price_details'])]
     private ?float $sellPrice = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true, options: ['default' => null])]
+    #[Groups(['order_price_details'])]
     private ?\DateTimeImmutable $sellDate = null;
 
     #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol", inversedBy: "orders")]
+    #[Groups(['order_price_details'])]
     private Symbol $symbol;
 
     #[ORM\Column(type: 'string', length: 64, nullable: true)]
     private ?string $buyReason = null;
 
-    #[ORM\Column(type: 'string', length: 64, nullable: true)]
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $sellReason = null;
 
     public function __construct()

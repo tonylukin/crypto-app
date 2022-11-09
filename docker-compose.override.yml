@@ -6,15 +6,15 @@ services:
       PHP_IDE_CONFIG: "serverName=Docker"
       XDEBUG_MODE: "debug"
       XDEBUG_SESSION: "PHPSTORM"
-      XDEBUG_CONFIG: "client_host=192.168.1.50 client_port=9007 start_with_request=yes"
+      XDEBUG_CONFIG: "client_host=192.168.1.54 client_port=9007 start_with_request=yes"
 
   nginx:
     ports:
       - "8017:80"
 
-  redis:
-    ports:
-      - "127.0.0.1:6380:6379"
+#  redis:
+#    ports:
+#      - "127.0.0.1:6380:6379"
 
 ###> doctrine/doctrine-bundle ###
   db:

@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\SymbolRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: SymbolRepository::class)]
 #[ORM\UniqueConstraint(name: "ix_symbol_name", fields: ["name"])]
@@ -18,6 +19,7 @@ class Symbol
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 32)]
+    #[Groups(['order_price_details'])]
     private ?string $name = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]

@@ -48,20 +48,81 @@ class OrderRepository extends ServiceEntityRepository
     /**
      * @return Order[]
      */
-    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null): array
+    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null, bool $soldOnly = false): array
     {
         $qb = $this->createQueryBuilder('o')
             ->where('o.createdAt >= :dateTime')
             ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
-            ->andWhere('o.status = :status')
-            ->setParameter('status', Order::STATUS_SELL)
             ->orderBy('o.id', 'ASC')
             ->addOrderBy('o.symbol')
         ;
+        if ($soldOnly) {
+            $qb
+                ->andWhere('o.status = :status')
+                ->setParameter('status', Order::STATUS_SELL)
+            ;
+        }
         if ($symbol !== null) {
             $qb
                 ->andWhere('o.symbol = :symbol')
                 ->setParameter('symbol', $symbol)
+            ;
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function getLastFinishedOrder(Symbol $symbol): ?Order
+    {
+        $qb = $this->createQueryBuilder('o')
+            ->where('o.status = :status')
+            ->setParameter('status', Order::STATUS_SELL)
+            ->andWhere('o.symbol = :symbol')
+            ->setParameter('symbol', $symbol)
+            ->orderBy('o.id', 'DESC')
+            ->setMaxResults(1)
+        ;
+        return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    /**
+     * @return Order[]
+     */
+    public function getLastItemsForDates(
+        ?string $dateStart = null,
+        ?string $dateEnd = null,
+        ?Symbol $symbol = null,
+        bool $onlyCompleted = false,
+    ): array {
+        $qb = $this->createQueryBuilder('o')
+            ->orderBy('o.id', 'ASC')
+            ->addOrderBy('o.symbol')
+        ;
+        if ($dateStart !== null) {
+            $dateFrom = new \DateTimeImmutable($dateStart);
+        } else {
+            $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
+        }
+        $qb
+            ->andWhere('o.createdAt >= :dateStart')
+            ->setParameter('dateStart', $dateFrom)
+        ;
+        if ($dateEnd !== null) {
+            $qb
+                ->andWhere('o.createdAt <= :dateEnd')
+                ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
+            ;
+        }
+        if ($symbol !== null) {
+            $qb
+                ->andWhere('o.symbol = :symbol')
+                ->setParameter('symbol', $symbol)
+            ;
+        }
+        if ($onlyCompleted) {
+            $qb
+                ->andWhere('o.status = :status')
+                ->setParameter('status', Order::STATUS_SELL)
             ;
         }
 

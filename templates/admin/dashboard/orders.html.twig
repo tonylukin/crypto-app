@@ -1,0 +1,62 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Orders{% endblock %}
+
+{% block body %}
+    {{ form_start(form, {attr: {class: 'row'}}) }}
+    <div class="col-sm-2">
+        {{ form_widget(form.dateStart, {attr: {class: 'js-datepicker', placeholder: 'Start'}}) }}
+    </div>
+    <div class="col-sm-2">
+        {{ form_widget(form.dateEnd, {attr: {class: 'js-datepicker', placeholder: 'End'}}) }}
+    </div>
+    <div class="col-sm-4">
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-danger" href="{{ app.request.pathInfo }}">Clear</a>
+    </div>
+    {{ form_end(form, {render_rest: false}) }}
+
+    <div class="mt-4">
+        <table class="table table-bordered table-hover">
+            <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Buy Date</th>
+                <th>Buy Price</th>
+                <th>Sell Date</th>
+                <th>Sell Price</th>
+                <th>Total</th>
+                <th>Profit</th>
+                <th>Percent</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% set total = 0 %}
+            {% set totalPercent = 0 %}
+            {% set count = 0 %}
+            {# @var \App\Entity\Order order #}
+            {% for order in orders %}
+                {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
+                <tr>
+                    <td>{{ order.symbol.name }}</td>
+                    <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
+                    <td>{{ order.price }}</td>
+                    <td>{{ order.sellDate ? order.sellDate|date('Y-m-d H:i') : null }}</td>
+                    <td>{{ order.sellPrice }}</td>
+                    <td>{{ order.price * order.quantity }}</td>
+                    <td>{{ order.profit }}</td>
+                    <td>{{ percent }}</td>
+                </tr>
+                {% set total = total + order.profit %}
+                {% set totalPercent = total + order.profit %}
+                {% set totalPercent = totalPercent + percent %}
+            {% endfor %}
+            <tr>
+                <td colspan="6" style="text-align: right">Total:</td>
+                <td>{{ total }}</td>
+                <td>{{ total ? (totalPercent / total)|round(2) : 0 }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

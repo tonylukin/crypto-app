@@ -43,12 +43,12 @@ class PriceRepository extends ServiceEntityRepository
     /**
      * @return Price[]
      */
-    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null): array
+    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null, string $sortDirection = 'ASC'): array
     {
         $qb = $this->createQueryBuilder('price')
             ->where('price.datetime >= :dateTime')
             ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
-            ->orderBy('price.datetime', 'ASC')
+            ->orderBy('price.datetime', $sortDirection)
             ->addOrderBy('price.symbol')
         ;
         if ($symbol !== null) {
@@ -72,5 +72,39 @@ class PriceRepository extends ServiceEntityRepository
         ;
 
         return $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function getLastItemsForDates(
+        ?string $dateStart = null,
+        ?string $dateEnd = null,
+        ?Symbol $symbol = null,
+    ): array {
+        $qb = $this->createQueryBuilder('price')
+            ->orderBy('price.id', 'ASC')
+            ->addOrderBy('price.symbol')
+        ;
+        if ($dateStart !== null) {
+            $dateFrom = new \DateTimeImmutable($dateStart);
+        } else {
+            $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
+        }
+        $qb
+            ->andWhere('price.datetime >= :dateStart')
+            ->setParameter('dateStart', $dateFrom)
+        ;
+        if ($dateEnd !== null) {
+            $qb
+                ->andWhere('price.datetime <= :dateEnd')
+                ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
+            ;
+        }
+        if ($symbol !== null) {
+            $qb
+                ->andWhere('price.symbol = :symbol')
+                ->setParameter('symbol', $symbol)
+            ;
+        }
+
+        return $qb->getQuery()->getResult();
     }
 }

@@ -2,59 +2,160 @@
 {# @var \App\Entity\Symbol symbol #}
 {# @var array prices #}
 {# @var array orders #}
-{# @var int daysAgo #}
+{# @var array allOrders #}
 
-{% block title %}Prices{% endblock %}
+{% block title %}Prices {{ symbol.name }} [{{ symbol.id }}{% endblock %}
 
 {% block body %}
-    <form class="row mt-3 mb-3">
-        <div class="col-sm-4">
-            <div class="row">
-                <label for="daysAgo" class="col-sm-3 col-form-label">Days ago</label>
-                <div class="col-sm-9">
-                  <input type="number" class="form-control" name="days-ago" id="daysAgo" value="{{ daysAgo }}">
-                </div>
+    <h3 class="mb-4">{{ symbol.name }} [{{ symbol.id }}]</h3>
+    {{ form_start(form, {attr: {class: 'row mt-3 mb-3'}}) }}
+    <div class="col-sm-4">
+        <div class="row">
+            {{ form_label(form.daysAgo, 'Days Ago', {label_attr: {class: 'col-sm-3 col-form-label'}}) }}
+            <div class="col-sm-9">
+                {{ form_widget(form.daysAgo, {type: 'number'}) }}
             </div>
         </div>
-        <div class="col-sm-4">
-            <button class="btn btn-primary" type="submit">Submit</button>
-        </div>
-    </form>
+    </div>
+    <div class="col-sm-2">
+        {{ form_widget(form.dateStart, {attr: {class: 'js-datepicker', placeholder: 'Start'}}) }}
+    </div>
+    <div class="col-sm-2">
+        {{ form_widget(form.dateEnd, {attr: {class: 'js-datepicker', placeholder: 'End'}}) }}
+    </div>
+    <div class="col-sm-4">
+        <button class="btn btn-primary" type="submit">Submit</button>
+        <a class="btn btn-danger" href="{{ app.request.pathInfo }}">Clear</a>
+    </div>
+    {{ form_end(form, {render_rest: false}) }}
+
     <canvas id="prices" width="400" height="400"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
+            integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
-      const prices = {{ prices|map(price => {x: price.datetime|date('Y-m-d H:m'), y: price.price})|json_encode|raw }};
+      const prices = {{ prices|map(price => {x: price.datetime|date('U') * 1000, y: price.price})|json_encode|raw }};
       const config = {
         type: 'line',
         data: {
-            datasets: [
-                {
-                    label: 'Цены',
-                    data: prices,
-                    cubicInterpolationMode: 'monotone',
-                    borderColor: '#d4a817',
-                },
-            {% for order in orders -%}
-                {
-                    label: 'Ордер {{ order.id }}',
-                    data: [
-                      {x: '{{ order.createdAt|date('Y-m-d H:m') }}', y: {{ order.price }} },
-                      {x: '{{ order.sellDate|date('Y-m-d H:m') }}', y: {{ order.sellPrice }} },
-                    ],
-                    cubicInterpolationMode: 'monotone',
-                    borderColor: '#{{ "%06d"|format(random(0, 999999)) }}',
-                },
-            {%- endfor %}
-            ]
+          datasets: [
+            {
+              label: 'Price',
+              data: prices,
+              borderColor: '#d4a817',
+              borderWidth: 2,
+            },
+              {% for order in orders -%}
+            {
+              label: 'Order {{ order.id }}',
+              data: [
+                { x: '{{ order.createdAt|date('U') * 1000 }}', y: {{ order.price }} },
+                { x: '{{ order.sellDate|date('U') * 1000 }}', y: {{ order.sellPrice }} },
+              ],
+              borderColor: '#{{ "%06d"|format(random(0, 999999)) }}',
+              borderWidth: 2,
+            },
+              {%- endfor %}
+              {% for order in allOrders -%}
+              {% if order.sellDate is null %}
+            {
+              label: 'Buy order {{ order.id }}',
+              data: [{ x: '{{ order.createdAt|date('U') * 1000 }}', y: {{ order.price }} }],
+              borderColor: '#ff0000',
+              borderWidth: 10,
+              radius: 1,
+              type: 'bubble',
+            },
+              {% endif %}
+              {%- endfor %}
+          ]
         },
         options: {
-            responsive: true,
-            interaction: {
-                mode: 'x',
-                intersect: true,
+          responsive: true,
+          // Turn off animations and data parsing for performance
+          animation: false,
+          parsing: false,
+
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          },
+          plugins: {
+            decimation: {
+              enabled: false,
+              algorithm: 'min-max',
+            },
+          },
+          scales: {
+            x: {
+              type: 'time',
+              time: {
+                unit: 'day',
+                displayFormats: {
+                  // day: 'd.M'
+                },
+              },
+              ticks: {
+                source: 'auto',
+                // Disabled rotation for performance
+                maxRotation: 0,
+                autoSkip: true,
+              }
             }
+          }
         }
       };
       new Chart(document.getElementById('prices'), config);
     </script>
+
+    <div class="row mt-4">
+        <div class="col-sm-4">
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Price</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for price in prices %}
+                    <tr>
+                        <td>{{ price.datetime|date('Y-m-d H:i') }}</td>
+                        <td>{{ price.price }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="col-sm-8">
+            <table class="table table-bordered table-hover">
+                <thead>
+                <tr>
+                    <th>Buy Date</th>
+                    <th>Buy Price</th>
+                    <th>Sell Date</th>
+                    <th>Sell Price</th>
+                    <th>Total</th>
+                    <th>Profit</th>
+                    <th>Percent</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for order in allOrders %}
+                    <tr class="{{ order.sellPrice ? 'table-success' : 'table-danger' }}">
+                        <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
+                        <td>{{ order.price }}</td>
+                        <td>{{ order.sellDate ? order.sellDate|date('Y-m-d H:i') : null }}</td>
+                        <td>{{ order.sellPrice }}</td>
+                        <td>{{ order.price * order.quantity }}</td>
+                        <td>{{ order.profit }}</td>
+                        <td>{{ order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

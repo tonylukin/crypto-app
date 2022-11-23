@@ -37,11 +37,14 @@
                         {% for symbol in getSymbols() %}
                             <li>
                                 <a class="dropdown-item"
-                                   href="{{ path('admin_dashboard_prices', {symbol: symbol.name, daysAgo: app.request.get('days-ago')}) }}"
-                                >{{ symbol.name }}</a>
+                                   href="{{ path('admin_dashboard_prices', {symbol: symbol.name, 'days-ago': app.request.get('days-ago')}) }}"
+                                >{{ symbol.name }} [{{ symbol.id }}]</a>
                             </li>
                         {% endfor %}
                     </ul>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link" href="{{ path('admin_dashboard_orders') }}">Orders</a>
                 </li>
                 <li class="nav-item ms-0"><a class="nav-link" href="{{ path('app_logout') }}">Logout</a></li>
             </ul>
@@ -52,7 +55,7 @@
         </div>
     </div>
 </nav>
-<main class="container">
+<main class="container mt-3">
     {% block body %}{% endblock %}
 </main>
 </body>

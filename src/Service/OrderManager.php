@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
-    public const MINIMAL_PROFIT_PERCENT = 5;
+    public const MINIMAL_PROFIT_PERCENT = 1;
 
     public function __construct(
         private EntityManagerInterface $entityManager,
@@ -33,12 +33,25 @@ class OrderManager
             return false;
         }
 
+        // если только что была продажа, не нужно опять покупать - нужен интервал в несколько часов, например
+        $order = $this->orderRepository->getLastFinishedOrder($symbol);
+        if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()) {
+            $this->logger->warning("Not enough time from the last order for symbol {$symbol->getName()}");
+            return false;
+        }
+
         $price = $this->bestPriceAnalyzer->getBestPriceForOrder($symbol);
         if ($price === null) {
             return false;
         }
 
-        $quantity = round($totalPrice / $price, $price > 1000 ? 4 : 2);
+        if ($price < 1) { // DOGE etc
+            $quantity = floor($totalPrice / $price);
+        } elseif ($price < 20) { // MATIC etc
+            $quantity = round($totalPrice / $price, 1);
+        } else {
+            $quantity = round($totalPrice / $price, $price > 1000 ? 4 : 2);
+        }
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())
@@ -77,7 +90,7 @@ class OrderManager
             return false;
         }
 
-        $price = $this->bestPriceAnalyzer->getBestPriceForSale($symbol);
+        $price = $this->bestPriceAnalyzer->getBestPriceForSell($symbol);
         if ($price === null) {
             return false;
         }

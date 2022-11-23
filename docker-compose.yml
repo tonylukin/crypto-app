@@ -8,11 +8,11 @@ services:
     container_name: ${APP_NAME:?err}-php
     volumes:
       - .:/var/www/html/:cached
-    environment:
-      PHP_IDE_CONFIG: "serverName=Docker"
-      XDEBUG_MODE: "debug"
-      XDEBUG_SESSION: "PHPSTORM"
-      XDEBUG_CONFIG: "client_host=192.168.1.190 client_port=9007 start_with_request=yes"
+#    environment:
+#      PHP_IDE_CONFIG: "serverName=Docker"
+#      XDEBUG_MODE: "debug"
+#      XDEBUG_SESSION: "PHPSTORM"
+#      XDEBUG_CONFIG: "client_host=192.168.1.190 client_port=9007 start_with_request=yes"
 
   nginx:
     image: nginx:latest

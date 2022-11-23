@@ -13,11 +13,15 @@ class PriceFixture extends Fixture
     public const PRICE_TO_BOTTOM_SYMBOL = 'SOL2BUSD';
     public const PRICE_TOP_BOTTOM_TOP_SYMBOL = 'ETHBUSD';
     public const NOT_RECENTLY_CHANGED_PRICE_SYMBOL = 'ETH2BUSD';
+    public const RECENTLY_CHANGED_PRICE_SYMBOL = 'BTCBUSD';
+    public const RECENTLY_CHANGED_PRICE_WITH_PLATO_SYMBOL = 'ADABUSD';
     private const SYMBOLS = [
         self::PRICE_TO_TOP_SYMBOL,
         self::PRICE_TO_BOTTOM_SYMBOL,
         self::PRICE_TOP_BOTTOM_TOP_SYMBOL,
         self::NOT_RECENTLY_CHANGED_PRICE_SYMBOL,
+        self::RECENTLY_CHANGED_PRICE_SYMBOL,
+        self::RECENTLY_CHANGED_PRICE_WITH_PLATO_SYMBOL,
     ];
 
     private const CHANGING_PRICE_15_PERCENT_UP = [
@@ -119,7 +123,6 @@ class PriceFixture extends Fixture
     ];
 
     private const CHANGING_PRICE_TOP_BOTTOM_TOP = [
-        1082.77,
         1085.49,
         1087.03,
         1074.85,
@@ -181,6 +184,33 @@ class PriceFixture extends Fixture
         1543.95,
         1536.93,
     ];
+    // diff between NOT_RECENTLY_CHANGED_PRICE in the last price 1590.19 which means that it started rising up
+    private const RECENTLY_CHANGED_PRICE = [
+        1569.75,
+        1561.56,
+        1563.94,
+        1576.37,
+        1589.29,
+        1575.2,
+        1576.33,
+        1589.56,
+        1585.29,
+        1578.03,
+        1543.95,
+        1536.93,
+    ];
+
+    private const RECENTLY_CHANGED_PRICE_WITH_PLATO = [
+        0.3487,
+        0.3548,
+        0.351,
+        0.3452,
+        0.3429,
+        0.3504,
+        0.3722,
+        0.3722,
+        0.3709,
+    ];
 
     public function load(ObjectManager $manager): void
     {
@@ -215,6 +245,20 @@ class PriceFixture extends Fixture
         $date = clone $currentDate;
         foreach (self::NOT_RECENTLY_CHANGED_PRICE as $priceValue) {
             $price = $this->createPriceEntity($priceValue, $symbols[self::NOT_RECENTLY_CHANGED_PRICE_SYMBOL], $date);
+            $manager->persist($price);
+        }
+        $manager->flush();
+
+        $date = clone $currentDate;
+        foreach (self::RECENTLY_CHANGED_PRICE as $priceValue) {
+            $price = $this->createPriceEntity($priceValue, $symbols[self::RECENTLY_CHANGED_PRICE_SYMBOL], $date);
+            $manager->persist($price);
+        }
+        $manager->flush();
+
+        $date = clone $currentDate;
+        foreach (array_reverse(self::RECENTLY_CHANGED_PRICE_WITH_PLATO) as $priceValue) {
+            $price = $this->createPriceEntity($priceValue, $symbols[self::RECENTLY_CHANGED_PRICE_WITH_PLATO_SYMBOL], $date);
             $manager->persist($price);
         }
         $manager->flush();

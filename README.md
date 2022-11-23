@@ -14,7 +14,7 @@ Run test
 docker-compose exec php bin/phpunit --filter=testGetBestPriceForOrder tests/Service/BestPriceAnalyzerTest.php
 ```
 
-Add init data to DB through fixture
+Add init data to PROD!!!! DB through fixture
 ```bash
 docker-compose exec php bin/console doctrine:fixtures:load --group=AppFixtures --append
 ```

@@ -20,6 +20,7 @@
 ###< phpunit/phpunit ###
 
 /.idea
+docker-compose.override.yml
 
 ###> symfony/webpack-encore-bundle ###
 /node_modules/

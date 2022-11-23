@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 class BestPriceAnalyzer
 {
     private const HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES = 'PT4H';
-    private const DAYS_SHORT_INTERVAL_FOR_PRICES = 'P1D';
+    private const HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO = 'PT8H';
     private const MAX_PERCENT_DIFF_ON_MOVING = 3;
     private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 6;
 
@@ -23,12 +23,15 @@ class BestPriceAnalyzer
     private const PRICE_MOVING_ON_SHORT_INTERVAL = 'Price moving on short interval';
     private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
 
+    private const LEGAL_STEP_MOVING_PERCENTAGE = 0.5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
+    private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
+
     private ?string $reason = null;
 
     public function __construct(
         private PriceRepository $priceRepository,
         private ApiInterface $api,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -54,7 +57,7 @@ class BestPriceAnalyzer
         return null;
     }
 
-    public function getBestPriceForSale(Symbol $symbol): ?float
+    public function getBestPriceForSell(Symbol $symbol): ?float
     {
         $currentPrice = $this->api->price($symbol->getName());
 
@@ -66,28 +69,55 @@ class BestPriceAnalyzer
         return null;
     }
 
-    private function isBestPriceForDirectionUntilPlato(Symbol $symbol, float $price, int $direction): bool
+    /**
+     * В отличие от checkDirection() этот метод считает разницу по движению цены
+     * @return bool Если true, то direction совпадает с направлением роста/падения валюты
+     */
+    private function isPriceOnMovingRecentlyChangedDirection(Symbol $symbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
     {
-        $avgPriceShortInterval = $this
+        $priceEntities = $this
             ->priceRepository
-            ->getAvgForInterval(
-                new \DateInterval(self::DAYS_SHORT_INTERVAL_FOR_PRICES),
+            ->getLastItemsForInterval(
+                new \DateInterval($interval),
                 $symbol
             )
         ;
-
-        $diffPercent = abs($price - $avgPriceShortInterval) / $price * 100;
-        if ($diffPercent > self::MAX_PERCENT_DIFF_ON_MOVING) {
-            // not a plato, rising or failing price
-            return false;
+        if (count($priceEntities) > self::ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION) {
+            $priceEntities = array_slice($priceEntities, -1 * self::ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION, self::ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION);
         }
 
-        if (!$this->checkDirection($symbol, $price, $direction, self::DAYS_SHORT_INTERVAL_FOR_PRICES)) {
-            return false;
+        $lastPrice = null;
+        $result = false;
+        foreach ($priceEntities as $i => $priceEntity) {
+            if ($i === 0) {
+                $lastPrice = $priceEntity->getPrice();
+                continue;
+            }
+
+            $currentDiff = $priceEntity->getPrice() - $lastPrice;
+
+            $lastPrice = $priceEntity->getPrice();
+            if ($i === 1) {
+                // сначала одинаковые знаки у направления и изменения цены, плато тоже подходит
+                $result = $currentDiff * $direction >= 0;
+            }
+            if ($i === 2) {
+                // затем разные
+                $result = $result && ($currentDiff * $direction < 0);
+
+                // в случае подъема после падения смотрим, чтобы шаг цены был равномерным, большие скачки ни к чему
+                if ($direction === self::DIRECTION_PRICE_FALLING_DOWN
+                    && (abs($lastPrice - $price) / $lastPrice) * 100 > self::LEGAL_STEP_MOVING_PERCENTAGE
+                ) {
+                    return false;
+                }
+            }
         }
 
-        $this->reason = $this->buildReason(self::PRICE_IS_ON_PLATO, $price, $symbol, $direction);
-        return true;
+        if ($result) {
+            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $symbol, $direction * -1);
+        }
+        return $result;
     }
 
     private function isPriceOnRisingUp(Symbol $symbol, float $price): bool
@@ -103,7 +133,6 @@ class BestPriceAnalyzer
     private function isPriceMovingOnShortInterval(Symbol $symbol, float $price, int $direction): bool
     {
         if (!$symbol->isRiskable() && $direction === self::DIRECTION_PRICE_RISING_UP) {
-            $this->logger->warning("Symbol {$symbol->getName()} not risky");
             return false;
         }
         $avgPriceShortInterval = $this
@@ -130,24 +159,6 @@ class BestPriceAnalyzer
         return true;
     }
 
-    private function isPriceOnMovingRecentlyChangedDirection(Symbol $symbol, float $price, int $direction): bool
-    {
-        $avgPrice = $this
-            ->priceRepository
-            ->getAvgForInterval(
-                new \DateInterval(self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES),
-                $symbol
-            )
-        ;
-        // смотрим последнюю цену и сравниваем с нашей, одинаковые знаки - значит сменилось направление
-        if (($avgPrice - $price) * $direction > 0) {
-            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $symbol, $direction * -1);
-            return true;
-        }
-
-        return false;
-    }
-
     /**
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
@@ -160,7 +171,7 @@ class BestPriceAnalyzer
                 $symbol
             )
         ;
-        return ($avgPriceShortInterval - $price) * $direction < 0;
+        return ($price - $avgPriceShortInterval) * $direction > 0;
     }
 
     public function getPriceProfit(Order $pendingOrder, float $possibleSalePrice): ?float
@@ -174,8 +185,8 @@ class BestPriceAnalyzer
             return null;
         }
 
-        if ($pendingOrder->getCreatedAt()->modify('+2 weeks') <= new \DateTimeImmutable()) {
-            $pendingOrder->getSymbol()->setActive(false);
+        if ($pendingOrder->getCreatedAt()->modify('+7 days') <= new \DateTimeImmutable()) {
+            $this->logger->warning("Was waiting too long for profit, sold after 7 days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}");
             return $profit;
         }
 
@@ -196,4 +207,59 @@ class BestPriceAnalyzer
     {
         return \sprintf('%s: %s %s [%s]', $reason, $price, $symbol->getName(), $direction > 0 ? 'rising up' : 'falling down');
     }
+
+    private function isBestPriceForDirectionUntilPlato(Symbol $symbol, float $price, int $direction): bool
+    {
+        // todo maybe plato is not needed, work only with changed directions
+        return false;
+
+        $avgPriceShortInterval = $this
+            ->priceRepository
+            ->getAvgForInterval(
+                new \DateInterval(self::HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO),
+                $symbol
+            )
+        ;
+
+        $diffPercent = abs($price - $avgPriceShortInterval) / $price * 100;
+        if ($diffPercent > self::MAX_PERCENT_DIFF_ON_MOVING) {
+            // not a plato, rising or failing price
+            return false;
+        }
+
+        if (!$this->checkDirection($symbol, $price, $direction, self::HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO)) {
+            return false;
+        }
+
+        $this->reason = $this->buildReason(self::PRICE_IS_ON_PLATO, $price, $symbol, $direction);
+        return true;
+    }
+
+    /**
+     * @return bool Если true, то direction совпадает с направлением роста/падения валюты
+     */
+//    private function checkDirection(Symbol $symbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
+//    {
+//        $priceEntities = $this
+//            ->priceRepository
+//            ->getLastItemsForInterval(
+//                new \DateInterval($interval),
+//                $symbol
+//            )
+//        ;
+//        $lastPrice = $price;
+//        $positiveDiff = $negativeDiff = 0;
+//        foreach ($priceEntities as $priceEntity) {
+//            $currentDiff = $lastPrice - $priceEntity->getPrice();
+//            $lastPrice = $priceEntity->getPrice();
+//            if ($currentDiff  > 0) {
+//                $positiveDiff += $currentDiff;
+//            } else {
+//                $negativeDiff += $currentDiff;
+//            }
+//        }
+//        $directionMultiplier = $positiveDiff > abs($negativeDiff);
+//
+//        return $directionMultiplier * $direction > 0;
+//    }
 }

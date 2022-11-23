@@ -26,6 +26,7 @@ class Order
     private string $exchange = self::EXCHANGE_BINANCE;
 
     #[ORM\Column(type: 'float')]
+    #[Groups(['order_price_details'])]
     private ?float $quantity;
 
     #[ORM\Column(type: 'float')]
@@ -36,6 +37,7 @@ class Order
     private string $status = self::STATUS_BUY;
 
     #[ORM\Column(type: 'float', nullable: true)]
+    #[Groups(['order_price_details'])]
     private ?float $profit;
 
     #[ORM\Column(type: 'datetime_immutable')]
@@ -166,12 +168,12 @@ class Order
         return $this;
     }
 
-    public function getSellDate(): ?\DateTimeInterface
+    public function getSellDate(): ?\DateTimeImmutable
     {
         return $this->sellDate;
     }
 
-    public function setSellDate(?\DateTimeInterface $sellDate): self
+    public function setSellDate(?\DateTimeImmutable $sellDate): self
     {
         $this->sellDate = $sellDate;
 

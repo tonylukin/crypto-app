@@ -17,7 +17,8 @@
     {{ form_end(form, {render_rest: false}) }}
 
     <div class="mt-4">
-        <table class="table table-bordered table-hover">
+        <h2>All symbols</h2>
+        <table class="table table-bordered table-striped">
             <thead>
             <tr>
                 <th>Symbol</th>
@@ -48,15 +49,38 @@
                     <td>{{ percent }}</td>
                 </tr>
                 {% set total = total + order.profit %}
-                {% set totalPercent = total + order.profit %}
                 {% set totalPercent = totalPercent + percent %}
             {% endfor %}
             <tr>
                 <td colspan="6" style="text-align: right">Total:</td>
                 <td>{{ total }}</td>
-                <td>{{ total ? (totalPercent / total)|round(2) : 0 }}</td>
+                <td>{{ total ? (totalPercent / orders|length)|round(2) : 0 }}</td>
             </tr>
             </tbody>
         </table>
+    </div>
+
+    <div class="mt-4 row">
+        <div class="col-sm-6">
+            <h2>Grouped symbols</h2>
+            <table class="table table-bordered table-hover">
+                <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Count</th>
+                    <th>Sum</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for count in counts %}
+                    <tr>
+                        <td>{{ count.name }}</td>
+                        <td>{{ count.count }}</td>
+                        <td>{{ count.sum }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 {% endblock %}

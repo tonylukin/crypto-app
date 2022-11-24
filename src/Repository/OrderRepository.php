@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Order;
 use App\Entity\Symbol;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -94,25 +95,7 @@ class OrderRepository extends ServiceEntityRepository
         ?Symbol $symbol = null,
         bool $onlyCompleted = false,
     ): array {
-        $qb = $this->createQueryBuilder('o')
-            ->orderBy('o.id', 'ASC')
-            ->addOrderBy('o.symbol')
-        ;
-        if ($dateStart !== null) {
-            $dateFrom = new \DateTimeImmutable($dateStart);
-        } else {
-            $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
-        }
-        $qb
-            ->andWhere('o.createdAt >= :dateStart')
-            ->setParameter('dateStart', $dateFrom)
-        ;
-        if ($dateEnd !== null) {
-            $qb
-                ->andWhere('o.createdAt <= :dateEnd')
-                ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
-            ;
-        }
+        $qb = $this->getDateIntervalQueryBuilder($dateStart, $dateEnd, $onlyCompleted);
         if ($symbol !== null) {
             $qb
                 ->andWhere('o.symbol = :symbol')
@@ -127,5 +110,57 @@ class OrderRepository extends ServiceEntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @return array{count: int, sum: float, name: string}
+     */
+    public function getSymbolCountsForDates(
+        ?string $dateStart = null,
+        ?string $dateEnd = null,
+        bool $onlyCompleted = false,
+    ): array {
+        $qb = $this->getDateIntervalQueryBuilder($dateStart, $dateEnd, $onlyCompleted);
+        $qb
+            ->select('COUNT(o.id) as count, SUM(o.profit) as sum, symbol.name')
+            ->innerJoin('o.symbol', 'symbol')
+        ;
+        if ($onlyCompleted) {
+            $qb
+                ->andWhere('o.status = :status')
+                ->setParameter('status', Order::STATUS_SELL)
+            ;
+        }
+        $qb->groupBy('o.symbol');
+
+        return $qb->getQuery()->getArrayResult();
+    }
+
+    private function getDateIntervalQueryBuilder(
+        ?string $dateStart = null,
+        ?string $dateEnd = null,
+        bool $onlyCompleted = false,
+    ): QueryBuilder {
+        $qb = $this->createQueryBuilder('o')
+            ->orderBy('o.id', 'ASC')
+            ->addOrderBy('o.symbol')
+        ;
+        if ($dateStart !== null) {
+            $dateFrom = new \DateTimeImmutable($dateStart);
+        } else {
+            $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
+        }
+        $qb
+            ->andWhere($onlyCompleted ? 'o.sellDate >= :dateStart' : 'o.createdAt >= :dateStart')
+            ->setParameter('dateStart', $dateFrom)
+        ;
+        if ($dateEnd !== null) {
+            $qb
+                ->andWhere($onlyCompleted ? 'o.sellDate <= :dateEnd' : 'o.createdAt <= :dateEnd')
+                ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
+            ;
+        }
+
+        return $qb;
     }
 }

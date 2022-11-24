@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Cron report{% endblock %}
+
+{% block body %}
+    <div class="mt-4">
+        <table class="table table-bordered table-striped">
+            <thead>
+            <tr>
+                <th>Run at</th>
+                <th>Output</th>
+                <th>Error</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in data %}
+                <tr class="{{ row['exit_code'] == 0 ? '' : 'table-danger' }}">
+                    <td>{{ row['run_at'] }}</td>
+                    <td>{{ row['output'] }}</td>
+                    <td>{{ row['error'] }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -23,4 +23,5 @@ Array.from(document.getElementsByClassName('js-datepicker')).forEach(el => {
       input.value = `${date.getFullYear()}-${month}-${day}`;
     }
   });
+  el.setAttribute('autocomplete', 'off');
 })

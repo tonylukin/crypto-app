@@ -10,6 +10,7 @@ use App\Form\Admin\DateIntervalType;
 use App\Model\Admin\DateIntervalModel;
 use App\Repository\OrderRepository;
 use App\Repository\PriceRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,12 +29,11 @@ class DashboardController extends AbstractController
         PriceRepository $priceRepository,
         OrderRepository $orderRepository,
     ): Response {
-        $form = $this->createForm(DateIntervalType::class, options: [
+        $model = new DateIntervalModel();
+        $form = $this->createForm(DateIntervalType::class, $model, [
             'method' => 'GET',
         ]);
         $form->handleRequest($request);
-        /** @var DateIntervalModel $model */
-        $model = $form->getData() ?? new DateIntervalModel();
 
         if ($model->dateStart || $model->dateEnd) {
             $prices = $priceRepository->getLastItemsForDates($model->dateStart, $model->dateEnd, $symbol);
@@ -56,17 +56,32 @@ class DashboardController extends AbstractController
     #[Route(path: '/admin/dashboard/orders', name: 'admin_dashboard_orders')]
     public function orders(Request $request, NormalizerInterface $normalizer, OrderRepository $orderRepository): Response
     {
-        $form = $this->createForm(DateIntervalType::class, options: [
+        $model = new DateIntervalModel();
+        $form = $this->createForm(DateIntervalType::class, $model, [
             'method' => 'GET',
         ]);
         $form->handleRequest($request);
-        /** @var DateIntervalModel $model */
-        $model = $form->getData() ?? new DateIntervalModel();
         $orders = $orderRepository->getLastItemsForDates($model->dateStart, $model->dateEnd, onlyCompleted: true);
+        $counts = $orderRepository->getSymbolCountsForDates($model->dateStart, $model->dateEnd, true);
 
         return $this->render('admin/dashboard/orders.html.twig', [
             'form' => $form->createView(),
             'orders' => $normalizer->normalize($orders, 'json', ['groups' => 'order_price_details']),
+            'counts' => $counts,
+        ]);
+    }
+
+    #[Route(path: '/admin/dashboard/cron-report', name: 'admin_dashboard_cron_report')]
+    public function cronReport(EntityManagerInterface $entityManager): Response
+    {
+        $connection = $entityManager->getConnection();
+        $sql = <<<SQL
+            SELECT * FROM cron_report WHERE job_id = 1 ORDER BY id DESC LIMIT 50;
+        SQL;
+        $data = $connection->fetchAllAssociative($sql);
+
+        return $this->render('admin/dashboard/cron_report.html.twig', [
+            'data' => $data,
         ]);
     }
 }

@@ -12,6 +12,7 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
+    private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 5;
     public const MINIMAL_PROFIT_PERCENT = 1;
 
     public function __construct(
@@ -33,15 +34,16 @@ class OrderManager
             return false;
         }
 
-        // если только что была продажа, не нужно опять покупать - нужен интервал в несколько часов, например
-        $order = $this->orderRepository->getLastFinishedOrder($symbol);
-        if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()) {
-            $this->logger->warning("Not enough time from the last order for symbol {$symbol->getName()}");
+        $price = $this->bestPriceAnalyzer->getBestPriceForOrder($symbol);
+        if ($price === null) {
             return false;
         }
 
-        $price = $this->bestPriceAnalyzer->getBestPriceForOrder($symbol);
-        if ($price === null) {
+        // если только что была продажа, смотрим изменение цены - она должна измениться мин. на 5% и упасть
+        $order = $this->orderRepository->getLastFinishedOrder($symbol);
+        if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()
+            && ($order->getSellPrice() - $price) / $price * 100 < self::MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL) {
+//            $this->logger->warning("Not enough time and price difference from the last order for symbol {$symbol->getName()}");
             return false;
         }
 

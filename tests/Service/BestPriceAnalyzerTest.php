@@ -53,7 +53,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
         yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is a plato but after rising
         yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is rising up after falling
         yield [1596.09, PriceFixture::NOT_RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is not changed direction
-        yield [1572.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, true]; // price is match because is changed direction
+        yield [1552.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, true]; // price is match because is changed direction
         yield [1599.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is changed direction but step it too big
     }
 

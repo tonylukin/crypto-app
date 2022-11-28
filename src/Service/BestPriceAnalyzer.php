@@ -23,7 +23,8 @@ class BestPriceAnalyzer
     private const PRICE_MOVING_ON_SHORT_INTERVAL = 'Price moving on short interval';
     private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
 
-    private const LEGAL_STEP_MOVING_PERCENTAGE = 0.5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
+    private const LEGAL_STEP_MOVING_PERCENTAGE = 5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
+    private const LEGAL_FALLEN_PRICE_PERCENTAGE = 2; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
 
     private ?string $reason = null;
@@ -100,6 +101,15 @@ class BestPriceAnalyzer
             if ($i === 1) {
                 // сначала одинаковые знаки у направления и изменения цены, плато тоже подходит
                 $result = $currentDiff * $direction >= 0;
+
+                // если падение от цены недостаточное по отношению к максимальной цене за последнее время, то прерываем
+                $highDiff = $this->priceRepository->getLastHighPrice(
+                    $symbol,
+                    new \DateInterval('PT24H'),
+                ) - $price;
+                if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < self::LEGAL_FALLEN_PRICE_PERCENTAGE) {
+                    return false;
+                }
             }
             if ($i === 2) {
                 // затем разные
@@ -107,7 +117,7 @@ class BestPriceAnalyzer
 
                 // в случае подъема после падения смотрим, чтобы шаг цены был равномерным, большие скачки ни к чему
                 if ($direction === self::DIRECTION_PRICE_FALLING_DOWN
-                    && (abs($lastPrice - $price) / $lastPrice) * 100 > self::LEGAL_STEP_MOVING_PERCENTAGE
+                    && (abs($lastPrice - $price) / $price) * 100 > self::LEGAL_STEP_MOVING_PERCENTAGE
                 ) {
                     return false;
                 }

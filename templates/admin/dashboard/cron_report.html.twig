@@ -16,7 +16,7 @@
             {% for row in data %}
                 <tr class="{{ row['exit_code'] == 0 ? '' : 'table-danger' }}">
                     <td>{{ row['run_at'] }}</td>
-                    <td>{{ row['output'] }}</td>
+                    <td>{{ row['output']|nl2br }}</td>
                     <td>{{ row['error'] }}</td>
                 </tr>
             {% endfor %}

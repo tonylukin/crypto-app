@@ -107,4 +107,17 @@ class PriceRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getResult();
     }
+
+    public function getLastHighPrice(Symbol $symbol, \DateInterval $dateInterval): ?float
+    {
+        $qb = $this->createQueryBuilder('price')
+            ->select('MAX(price.price) AS highPrice')
+            ->where('price.datetime >= :dateTime')
+            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->andWhere('price.symbol = :symbol')
+            ->setParameter('symbol', $symbol)
+        ;
+
+        return $qb->getQuery()->getSingleScalarResult();
+    }
 }

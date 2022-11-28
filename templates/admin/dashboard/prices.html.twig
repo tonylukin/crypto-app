@@ -120,12 +120,20 @@
                 </tr>
                 </thead>
                 <tbody>
+                {% set avgPrice = 0 %}
+                {% set count = 0 %}
                 {% for price in prices %}
                     <tr>
                         <td>{{ price.datetime|date('Y-m-d H:i') }}</td>
                         <td>{{ price.price }}</td>
                     </tr>
+                    {% set avgPrice = avgPrice + price.price %}
+                    {% set count = count + 1 %}
                 {% endfor %}
+                <tr>
+                    <td style="text-align: right">Avg</td>
+                    <td style="font-weight: bold">{{ count ? (avgPrice / count)|round(4) : 0 }}</td>
+                </tr>
                 </tbody>
             </table>
         </div>

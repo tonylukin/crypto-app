@@ -61,7 +61,7 @@ class DashboardController extends AbstractController
             'method' => 'GET',
         ]);
         $form->handleRequest($request);
-        $orders = $orderRepository->getLastItemsForDates($model->dateStart, $model->dateEnd, onlyCompleted: true);
+        $orders = $orderRepository->getLastItemsForDates($model->dateStart, $model->dateEnd);
         $counts = $orderRepository->getSymbolCountsForDates($model->dateStart, $model->dateEnd, true);
 
         return $this->render('admin/dashboard/orders.html.twig', [

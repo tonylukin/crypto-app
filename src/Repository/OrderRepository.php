@@ -142,8 +142,8 @@ class OrderRepository extends ServiceEntityRepository
         bool $onlyCompleted = false,
     ): QueryBuilder {
         $qb = $this->createQueryBuilder('o')
-            ->orderBy('o.id', 'ASC')
-            ->addOrderBy('o.symbol')
+            ->orderBy('o.sellDate', 'DESC')
+            ->addOrderBy('o.id', 'DESC')
         ;
         if ($dateStart !== null) {
             $dateFrom = new \DateTimeImmutable($dateStart);
@@ -151,12 +151,12 @@ class OrderRepository extends ServiceEntityRepository
             $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
         }
         $qb
-            ->andWhere($onlyCompleted ? 'o.sellDate >= :dateStart' : 'o.createdAt >= :dateStart')
+            ->andWhere('IF(o.sellDate IS NULL, o.createdAt, o.sellDate) >= :dateStart')
             ->setParameter('dateStart', $dateFrom)
         ;
         if ($dateEnd !== null) {
             $qb
-                ->andWhere($onlyCompleted ? 'o.sellDate <= :dateEnd' : 'o.createdAt <= :dateEnd')
+                ->andWhere('IF(o.sellDate IS NULL, o.createdAt, o.sellDate) <= :dateEnd')
                 ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
             ;
         }

@@ -38,7 +38,7 @@
             {# @var \App\Entity\Order order #}
             {% for order in orders %}
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
-                <tr>
+                <tr class="{{ order.sellPrice ? 'table-success' : 'table-danger' }}">
                     <td>{{ order.symbol.name }}</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
                     <td>{{ order.price }}</td>

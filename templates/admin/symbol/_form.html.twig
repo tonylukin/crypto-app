@@ -1,0 +1,20 @@
+{{ form_start(form) }}
+
+{% if form.name is defined %}
+<div class="mb-3">
+    {{ form_row(form.name) }}
+</div>
+{% endif %}
+
+<div class="mb-3">
+    {{ form_row(form.totalPrice) }}
+</div>
+
+{{ form_row(form.active) }}
+{{ form_row(form.riskable) }}
+
+<div class="mt-3">
+    <button class="btn btn-primary" type="submit">Save</button>
+</div>
+
+{{ form_end(form) }}

@@ -1,0 +1,10 @@
+{# @var \App\Entity\Symbol symbol #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit symbol{% endblock %}
+
+{% block body %}
+    <h2>Edit symbol {{ symbol.name }}[{{ symbol.id }}]</h2>
+
+    {% include 'admin/symbol/_form.html.twig' with {form: form} %}
+{% endblock %}

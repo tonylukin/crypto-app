@@ -21,6 +21,7 @@
         <table class="table table-bordered table-striped">
             <thead>
             <tr>
+                <th>ID</th>
                 <th>Symbol</th>
                 <th>Buy Date</th>
                 <th>Quantity</th>
@@ -40,6 +41,7 @@
             {% for order in orders %}
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
                 <tr class="{{ order.sellPrice ? 'table-success' : 'table-danger' }}">
+                    <td>{{ order.id }}</td>
                     <td>{{ order.symbol.name }}</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
                     <td>{{ order.quantity }}</td>
@@ -55,7 +57,7 @@
                 {% set completedCount = completedCount + (order.sellPrice ? 1 : 0) %}
             {% endfor %}
             <tr>
-                <td colspan="7" style="text-align: right">Total:</td>
+                <td colspan="8" style="text-align: right">Total:</td>
                 <td>{{ total }}</td>
                 <td>{{ total ? (totalPercent / completedCount)|round(2) : 0 }}</td>
             </tr>

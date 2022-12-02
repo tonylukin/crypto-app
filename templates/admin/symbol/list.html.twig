@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Symbol list{% endblock %}
+
+{% block body %}
+    <div class="mb-3">
+        <a class="btn btn-primary btn-lg" href="{{ path('admin_symbol_create') }}">Create</a>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Riskable</th>
+            <th>Total price</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {# @var \App\Entity\Symbol symbol #}
+        {% for symbol in symbols %}
+            <tr class="{{ symbol.active ? '' : 'table-danger' }}">
+                <td>{{ symbol.id }}</td>
+                <td>{{ symbol.name }}</td>
+                <td>{{ symbol.riskable }}</td>
+                <td>{{ symbol.totalPrice }}</td>
+                <td>
+                    <a class="btn btn-success" href="{{ path('admin_symbol_edit', {symbol: symbol.name}) }}">edit</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

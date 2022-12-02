@@ -28,7 +28,8 @@
 {#                    <a class="nav-link active" aria-current="page" href="#">Home</a>#}
 {#                </li>#}
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                    <a class="nav-link dropdown-toggle {{ app.request.get('_route') == 'admin_dashboard_prices' ? 'active' : '' }}"
+                       href="#" role="button" data-bs-toggle="dropdown"
                        aria-expanded="false">
                         Prices
                     </a>
@@ -43,12 +44,17 @@
                         {% endfor %}
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ path('admin_dashboard_orders') }}">Orders</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ path('admin_dashboard_cron_report') }}">Cron report</a>
-                </li>
+                {% set menuItems = [
+                    ['Orders', 'admin_dashboard_orders'],
+                    ['Cron report', 'admin_dashboard_cron_report'],
+                    ['Symbols', 'admin_symbol_list'],
+                ] %}
+                {% for menuItem in menuItems %}
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.get('_route') == menuItem[1] ? 'active' : '' }}"
+                           href="{{ path(menuItem[1]) }}">{{ menuItem[0] }}</a>
+                    </li>
+                {% endfor %}
                 <li class="nav-item ms-0"><a class="nav-link" href="{{ path('app_logout') }}">Logout</a></li>
             </ul>
 {#            <form class="d-flex" role="search">#}

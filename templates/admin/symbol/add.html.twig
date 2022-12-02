@@ -1,0 +1,8 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create symbol{% endblock %}
+
+{% block body %}
+    <h2>Create symbol</h2>
+    {% include 'admin/symbol/_form.html.twig' with {form: form} %}
+{% endblock %}

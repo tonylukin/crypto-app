@@ -21,16 +21,14 @@ class API extends \Binance\API implements ApiInterface
         return (float) parent::price($symbol);
     }
 
-    public function buyLimit(string $symbol, float $quantity, float $price)
+    public function buyLimit(string $symbol, float $quantity, float $price): array
     {
-//        return parent::buyTest($symbol, (string) $quantity, (string) $price); // todo remove
-//        return parent::buy($symbol, (string) $quantity, (string) $price);
+        return parent::buy($symbol, (string) $quantity, (string) $price);
     }
 
-    public function sellLimit(string $symbol, float $quantity, float $price)
+    public function sellLimit(string $symbol, float $quantity, float $price): array
     {
-//        return parent::sellTest($symbol, (string) $quantity, (string) $price); // todo remove
-//        return parent::sell($symbol, (string) $quantity, (string) $price);
+        return parent::sell($symbol, (string) $quantity, (string) $price);
     }
 
     public function getFeeMultiplier(): float

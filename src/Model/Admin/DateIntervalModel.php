@@ -8,5 +8,5 @@ class DateIntervalModel
 {
     public ?string $dateStart = null;
     public ?string $dateEnd = null;
-    public ?string $daysAgo = '2';
+    public ?string $daysAgo = '7';
 }

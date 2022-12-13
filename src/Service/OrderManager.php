@@ -47,7 +47,7 @@ class OrderManager
             return false;
         }
 
-        if ($price < 1) { // DOGE etc
+        if ($price < 5) { // DOGE etc
             $quantity = floor($totalPrice / $price);
         } elseif ($price < 20) { // MATIC etc
             $quantity = round($totalPrice / $price, 1);

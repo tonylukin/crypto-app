@@ -195,11 +195,6 @@ class BestPriceAnalyzer
             return null;
         }
 
-        if ($pendingOrder->getCreatedAt()->modify('+7 days') <= new \DateTimeImmutable()) {
-            $this->logger->warning("Was waiting too long for profit, sold after 7 days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}");
-            return $profit;
-        }
-
         $profitPercent = $profit / $expenses * 100;
         if ($profitPercent < OrderManager::MINIMAL_PROFIT_PERCENT) {
             return null;

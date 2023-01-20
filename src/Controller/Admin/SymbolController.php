@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Controller\Admin;
 
 use App\Entity\Symbol;
+use App\Entity\User;
+use App\Entity\UserSymbol;
 use App\Form\Admin\SymbolType;
 use App\Repository\SymbolRepository;
+use App\Repository\UserSymbolRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,12 +20,14 @@ use Symfony\Component\Routing\Annotation\Route;
 class SymbolController extends AbstractController
 {
     #[Route(path: '/admin/symbols', name: 'admin_symbol_list')]
-    public function list(SymbolRepository $symbolRepository): Response
+    public function list(UserSymbolRepository $userSymbolRepository): Response
     {
-        $symbols = $symbolRepository->findAll();
+        /** @var User $user */
+        $user = $this->getUser();
+        $userSymbols = $userSymbolRepository->findAllByUser($user);
 
         return $this->render('admin/symbol/list.html.twig', [
-            'symbols' => $symbols,
+            'userSymbols' => $userSymbols,
         ]);
     }
 
@@ -31,11 +36,14 @@ class SymbolController extends AbstractController
         Request $request,
         EntityManagerInterface $entityManager,
     ): Response {
-        $symbol = new Symbol();
-        $form = $this->createForm(SymbolType::class, $symbol);
+        /** @var User $user */
+        $user = $this->getUser();
+        $userSymbol = new UserSymbol();
+        $userSymbol->setUser($user);
+        $form = $this->createForm(SymbolType::class, $userSymbol);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($symbol);
+            $entityManager->persist($userSymbol);
             $entityManager->flush();
 
             return $this->redirectToRoute('admin_symbol_list');
@@ -52,8 +60,12 @@ class SymbolController extends AbstractController
         Request $request,
         Symbol $symbol,
         EntityManagerInterface $entityManager,
+        UserSymbolRepository $userSymbolRepository,
     ): Response {
-        $form = $this->createForm(SymbolType::class, $symbol);
+        /** @var User $user */
+        $user = $this->getUser();
+        $userSymbol = $userSymbolRepository->findOneBySymbolAndUser($user, $symbol);
+        $form = $this->createForm(SymbolType::class, $userSymbol);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
@@ -66,4 +78,6 @@ class SymbolController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+
+    // todo add delete relation action, no relation -> delete symbol
 }

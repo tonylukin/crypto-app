@@ -25,8 +25,8 @@ class Price
     #[Groups(['price_details'])]
     private ?float $price;
 
-    #[ORM\Column(type: 'string', length: 16)]
-    private ?string $exchange = self::EXCHANGE_BINANCE;
+    #[ORM\Column(type: 'smallint')]
+    private int $exchange = self::EXCHANGE_BINANCE;
 
     #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol")]
     private Symbol $symbol;
@@ -72,12 +72,12 @@ class Price
         return $this;
     }
 
-    public function getExchange(): ?string
+    public function getExchange(): int
     {
         return $this->exchange;
     }
 
-    public function setExchange(string $exchange): self
+    public function setExchange(int $exchange): self
     {
         $this->exchange = $exchange;
 

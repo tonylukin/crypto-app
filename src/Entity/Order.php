@@ -8,10 +8,11 @@ use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
-#[ORM\Index(name: "ix_order_symbol_status_exchange", fields: ["symbol", "status", "exchange"])]
+#[ORM\Index(name: "ix_order_user_symbol_status_exchange", fields: ["user", "symbol", "status", "exchange"])]
 class Order
 {
-    public const EXCHANGE_BINANCE = 'binance';
+    public const EXCHANGE_BINANCE = 1;
+    public const EXCHANGE_HUOBI = 2;
 
     public const STATUS_BUY = 'buy';
     public const STATUS_SELL = 'sale';
@@ -22,8 +23,8 @@ class Order
     #[Groups(['order_price_details'])]
     private ?int $id;
 
-    #[ORM\Column(type: 'string', length: 16)]
-    private string $exchange = self::EXCHANGE_BINANCE;
+    #[ORM\Column(type: 'smallint')]
+    private int $exchange = self::EXCHANGE_BINANCE;
 
     #[ORM\Column(type: 'float')]
     #[Groups(['order_price_details'])]
@@ -52,7 +53,7 @@ class Order
     #[Groups(['order_price_details'])]
     private ?\DateTimeImmutable $sellDate = null;
 
-    #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol", inversedBy: "orders")]
+    #[ORM\ManyToOne(targetEntity: "App\Entity\Symbol", inversedBy: 'orders')]
     #[Groups(['order_price_details'])]
     private Symbol $symbol;
 
@@ -61,6 +62,11 @@ class Order
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $sellReason = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'orders')]
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['order_price_details'])]
+    private User $user;
 
     public function __construct()
     {
@@ -84,12 +90,12 @@ class Order
         return $this;
     }
 
-    public function getExchange(): ?string
+    public function getExchange(): int
     {
         return $this->exchange;
     }
 
-    public function setExchange(string $exchange): self
+    public function setExchange(int $exchange): self
     {
         $this->exchange = $exchange;
 
@@ -202,5 +208,15 @@ class Order
         $this->sellReason = $sellReason;
 
         return $this;
+    }
+
+    public function getUser(): User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User $user): void
+    {
+        $this->user = $user;
     }
 }

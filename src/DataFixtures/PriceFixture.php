@@ -4,6 +4,8 @@ namespace App\DataFixtures;
 
 use App\Entity\Price;
 use App\Entity\Symbol;
+use App\Entity\User;
+use App\Entity\UserSymbol;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 
@@ -275,17 +277,21 @@ class PriceFixture extends Fixture
         return $price;
     }
 
-    /**
-     * @return Symbol[]
-     */
     private function createSymbols(ObjectManager $manager): array
     {
+        $user = $manager->getRepository(User::class)->findOneBy([]);
+        /** @var Symbol[] $data */
         $data = [];
         foreach (self::SYMBOLS as $symbolName) {
             $data[$symbolName] = (new Symbol())
                 ->setName($symbolName)
             ;
+            $userSymbol = (new UserSymbol())
+                ->setUser($user)
+                ->setSymbol($data[$symbolName])
+            ;
             $manager->persist($data[$symbolName]);
+            $manager->persist($userSymbol);
         }
 
         return $data;

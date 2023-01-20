@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Order;
 use App\Entity\Symbol;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -41,19 +42,29 @@ class OrderRepository extends ServiceEntityRepository
         }
     }
 
-    public function findPendingOrder(Symbol $symbol): ?Order
+    public function findPendingOrder(User $user, Symbol $symbol): ?Order
     {
-        return $this->findOneBy(['symbol' => $symbol, 'status' => Order::STATUS_BUY], ['id' => 'DESC']);
+        return $this->findOneBy([
+            'user' => $user,
+            'symbol' => $symbol,
+            'status' => Order::STATUS_BUY,
+        ], ['id' => 'DESC']);
     }
 
     /**
      * @return Order[]
      */
-    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null, bool $soldOnly = false): array
-    {
+    public function getLastItemsForInterval(
+        User $user,
+        \DateInterval $dateInterval,
+        ?Symbol $symbol = null,
+        bool $soldOnly = false,
+    ): array {
         $qb = $this->createQueryBuilder('o')
             ->where('o.createdAt >= :dateTime')
             ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->andWhere('o.user = :user')
+            ->setParameter('user', $user)
             ->orderBy('o.id', 'ASC')
             ->addOrderBy('o.symbol')
         ;
@@ -73,13 +84,15 @@ class OrderRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getLastFinishedOrder(Symbol $symbol): ?Order
+    public function getLastFinishedOrder(User $user, Symbol $symbol): ?Order
     {
         $qb = $this->createQueryBuilder('o')
             ->where('o.status = :status')
             ->setParameter('status', Order::STATUS_SELL)
             ->andWhere('o.symbol = :symbol')
             ->setParameter('symbol', $symbol)
+            ->andWhere('o.user = :user')
+            ->setParameter('user', $user)
             ->orderBy('o.id', 'DESC')
             ->setMaxResults(1)
         ;
@@ -90,12 +103,17 @@ class OrderRepository extends ServiceEntityRepository
      * @return Order[]
      */
     public function getLastItemsForDates(
+        User $user,
         ?string $dateStart = null,
         ?string $dateEnd = null,
         ?Symbol $symbol = null,
         bool $onlyCompleted = false,
     ): array {
-        $qb = $this->getDateIntervalQueryBuilder($dateStart, $dateEnd, $onlyCompleted);
+        $qb = $this->getDateIntervalQueryBuilder($user, $dateStart, $dateEnd, $onlyCompleted);
+        $qb
+            ->innerJoin('o.symbol', 'symbol')
+            ->addSelect('symbol')
+        ;
         if ($symbol !== null) {
             $qb
                 ->andWhere('o.symbol = :symbol')
@@ -116,11 +134,12 @@ class OrderRepository extends ServiceEntityRepository
      * @return array{count: int, sum: float, name: string}
      */
     public function getSymbolCountsForDates(
+        User $user,
         ?string $dateStart = null,
         ?string $dateEnd = null,
         bool $onlyCompleted = false,
     ): array {
-        $qb = $this->getDateIntervalQueryBuilder($dateStart, $dateEnd, $onlyCompleted);
+        $qb = $this->getDateIntervalQueryBuilder($user, $dateStart, $dateEnd, $onlyCompleted);
         $qb
             ->select('COUNT(o.id) as count, SUM(o.profit) as sum, symbol.name')
             ->innerJoin('o.symbol', 'symbol')
@@ -137,6 +156,7 @@ class OrderRepository extends ServiceEntityRepository
     }
 
     private function getDateIntervalQueryBuilder(
+        User $user,
         ?string $dateStart = null,
         ?string $dateEnd = null,
         bool $onlyCompleted = false,
@@ -153,6 +173,8 @@ class OrderRepository extends ServiceEntityRepository
         $qb
             ->andWhere('IF(o.sellDate IS NULL, o.createdAt, o.sellDate) >= :dateStart')
             ->setParameter('dateStart', $dateFrom)
+            ->andWhere('o.user = :user')
+            ->setParameter('user', $user)
         ;
         if ($dateEnd !== null) {
             $qb

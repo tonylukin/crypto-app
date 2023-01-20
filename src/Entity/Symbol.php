@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\SymbolRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -22,17 +23,17 @@ class Symbol
     #[Groups(['order_price_details'])]
     private ?string $name = null;
 
-    #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    private bool $active = true;
-
-    #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    private bool $riskable = false;
-
-    #[ORM\Column(type: 'float', nullable: true)]
-    private ?float $totalPrice = null;
-
-    #[ORM\OneToMany(targetEntity: "App\Entity\Order", mappedBy: "symbol")]
+    #[ORM\OneToMany(targetEntity: Order::class, mappedBy: 'symbol')]
     private Collection $orders;
+
+    #[ORM\OneToMany(targetEntity: UserSymbol::class, mappedBy: 'symbol', orphanRemoval: true)]
+    private Collection $userSymbols;
+
+    public function __construct()
+    {
+        $this->orders = new ArrayCollection();
+        $this->userSymbols = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -51,45 +52,6 @@ class Symbol
         return $this;
     }
 
-    public function isActive(): ?bool
-    {
-        return $this->active;
-    }
-
-    public function setActive(bool $active): self
-    {
-        $this->active = $active;
-
-        return $this;
-    }
-
-    /**
-     * Если валюта рисковая, значит ее можно покупать на подъеме, надеясь, что она еще больше вырастет
-     */
-    public function isRiskable(): ?bool
-    {
-        return $this->riskable;
-    }
-
-    public function setRiskable(bool $riskable): self
-    {
-        $this->riskable = $riskable;
-
-        return $this;
-    }
-
-    public function getTotalPrice(): ?float
-    {
-        return $this->totalPrice;
-    }
-
-    public function setTotalPrice(?float $totalPrice): self
-    {
-        $this->totalPrice = $totalPrice;
-
-        return $this;
-    }
-
     /**
      * @see SymbolRepository::getActiveList()
      * @return Collection<Order>
@@ -97,5 +59,20 @@ class Symbol
     public function getOrders(): Collection
     {
         return $this->orders;
+    }
+
+    /**
+     * @return Collection<UserSymbol>
+     */
+    public function getUserSymbols(): Collection
+    {
+        return $this->userSymbols;
+    }
+
+    public function addUserSymbol(Symbol $symbol): void
+    {
+        if (!$this->userSymbols->contains($symbol)) {
+            $this->userSymbols->add($symbol);
+        }
     }
 }

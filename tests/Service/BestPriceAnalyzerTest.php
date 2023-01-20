@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\DataFixtures\PriceFixture;
+use App\Entity\User;
+use App\Entity\UserSymbol;
 use App\Repository\SymbolRepository;
 use App\Service\ApiInterface;
 use App\Service\BestPriceAnalyzer;
@@ -16,6 +18,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
     private ?BestPriceAnalyzer $bestPriceAnalyzer;
     private ApiInterface|\PHPUnit\Framework\MockObject\MockObject $apiMock;
     private array $symbols;
+    private User $user;
 
     protected function setUp(): void
     {
@@ -26,6 +29,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
         $this->bestPriceAnalyzer = $container->get(BestPriceAnalyzer::class);
         $this->symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $this->symbolRepository->getActiveList();
+        $this->user = new User();
     }
 
     /**
@@ -38,7 +42,11 @@ class BestPriceAnalyzerTest extends KernelTestCase
             ->method('price')
             ->willReturn($price)
         ;
-        $result = $this->bestPriceAnalyzer->getBestPriceForOrder($this->symbols[$symbol]);
+        $userSymbol = (new UserSymbol())
+            ->setSymbol($this->symbols[$symbol])
+            ->setUser($this->user)
+        ;
+        $result = $this->bestPriceAnalyzer->getBestPriceForOrder($userSymbol);
         if ($resultIsNotNull) {
             self::assertSame($price, $result);
         } else {
@@ -67,7 +75,11 @@ class BestPriceAnalyzerTest extends KernelTestCase
             ->method('price')
             ->willReturn($price)
         ;
-        $result = $this->bestPriceAnalyzer->getBestPriceForSell($this->symbols[$symbol]);
+        $userSymbol = (new UserSymbol())
+            ->setSymbol($this->symbols[$symbol])
+            ->setUser($this->user)
+        ;
+        $result = $this->bestPriceAnalyzer->getBestPriceForSell($userSymbol);
         if ($resultIsNotNull) {
             self::assertSame($price, $result);
         } else {

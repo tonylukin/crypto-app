@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Order;
 use App\Entity\Symbol;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -43,16 +44,23 @@ class SymbolRepository extends ServiceEntityRepository
     /**
      * @return Symbol[]
      */
-    public function getActiveList(): array
+    public function getActiveList(?User $user = null): array
     {
-        return $this->createQueryBuilder('symbol', 'symbol.name')
+        $qb = $this->createQueryBuilder('symbol', 'symbol.name')
             ->leftJoin('symbol.orders', 'orders')
-            ->where('symbol.active = true')
-            ->orWhere('orders.status = :status')
+            ->leftJoin('symbol.userSymbols', 'userSymbols')
+            ->andWhere('userSymbols.active = true OR orders.status = :status')
             ->setParameter('status', Order::STATUS_BUY)
-            ->getQuery()
-            ->getResult()
         ;
+        if ($user !== null) {
+            $qb
+                ->innerJoin('symbol.users', 'users')
+                ->andWhere('users = :user')
+                ->setParameter('user', $user)
+            ;
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     /**

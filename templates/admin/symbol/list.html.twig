@@ -18,15 +18,15 @@
         </tr>
         </thead>
         <tbody>
-        {# @var \App\Entity\Symbol symbol #}
-        {% for symbol in symbols %}
-            <tr class="{{ symbol.active ? '' : 'table-danger' }}">
-                <td>{{ symbol.id }}</td>
-                <td>{{ symbol.name }}</td>
-                <td>{{ symbol.riskable }}</td>
-                <td>{{ symbol.totalPrice }}</td>
+        {# @var \App\Entity\UserSymbol userSymbol #}
+        {% for userSymbol in userSymbols %}
+            <tr class="{{ userSymbol.active ? '' : 'table-danger' }}">
+                <td>{{ userSymbol.symbol.id }}</td>
+                <td>{{ userSymbol.symbol.name }}</td>
+                <td>{{ userSymbol.riskable }}</td>
+                <td>{{ userSymbol.totalPrice }}</td>
                 <td>
-                    <a class="btn btn-success" href="{{ path('admin_symbol_edit', {symbol: symbol.name}) }}">edit</a>
+                    <a class="btn btn-success" href="{{ path('admin_symbol_edit', {symbol: userSymbol.symbol.name}) }}">edit</a>
                 </td>
             </tr>
         {% endfor %}

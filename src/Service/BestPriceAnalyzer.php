@@ -6,8 +6,8 @@ namespace App\Service;
 
 use App\Entity\Order;
 use App\Entity\Symbol;
+use App\Entity\UserSymbol;
 use App\Repository\PriceRepository;
-use Psr\Log\LoggerInterface;
 
 class BestPriceAnalyzer
 {
@@ -32,38 +32,37 @@ class BestPriceAnalyzer
     public function __construct(
         private PriceRepository $priceRepository,
         private ApiInterface $api,
-        private LoggerInterface $logger,
     ) {
     }
 
-    public function getBestPriceForOrder(Symbol $symbol): ?float
+    public function getBestPriceForOrder(UserSymbol $userSymbol): ?float
     {
         // don't set order before some history obtained
-        $pricesCount = $this->priceRepository->count(['symbol' => $symbol]);
+        $pricesCount = $this->priceRepository->count(['symbol' => $userSymbol->getSymbol()]);
         if ($pricesCount < self::MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER) {
             return null;
         }
 
-        $currentPrice = $this->api->price($symbol->getName());
-        if ($this->isPriceOnFallingDown($symbol, $currentPrice)) {
+        $currentPrice = $this->api->price($userSymbol->getSymbol()->getName());
+        if ($this->isPriceOnFallingDown($userSymbol, $currentPrice)) {
             return null;
         }
 
-        if ($this->isBestPriceForDirectionUntilPlato($symbol, $currentPrice, self::DIRECTION_PRICE_FALLING_DOWN)
-            || $this->isPriceOnMovingRecentlyChangedDirection($symbol, $currentPrice, self::DIRECTION_PRICE_FALLING_DOWN)
-            || $this->isPriceOnRisingUp($symbol, $currentPrice)) {
+        if ($this->isBestPriceForDirectionUntilPlato($userSymbol, $currentPrice, self::DIRECTION_PRICE_FALLING_DOWN)
+            || $this->isPriceOnMovingRecentlyChangedDirection($userSymbol, $currentPrice, self::DIRECTION_PRICE_FALLING_DOWN)
+            || $this->isPriceOnRisingUp($userSymbol, $currentPrice)) {
             return $currentPrice;
         }
 
         return null;
     }
 
-    public function getBestPriceForSell(Symbol $symbol): ?float
+    public function getBestPriceForSell(UserSymbol $userSymbol): ?float
     {
-        $currentPrice = $this->api->price($symbol->getName());
+        $currentPrice = $this->api->price($userSymbol->getSymbol()->getName());
 
-        if ($this->isBestPriceForDirectionUntilPlato($symbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)
-            || $this->isPriceOnMovingRecentlyChangedDirection($symbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)) {
+        if ($this->isBestPriceForDirectionUntilPlato($userSymbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)
+            || $this->isPriceOnMovingRecentlyChangedDirection($userSymbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)) {
             return $currentPrice;
         }
 
@@ -74,13 +73,13 @@ class BestPriceAnalyzer
      * В отличие от checkDirection() этот метод считает разницу по движению цены
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
-    private function isPriceOnMovingRecentlyChangedDirection(Symbol $symbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
+    private function isPriceOnMovingRecentlyChangedDirection(UserSymbol $userSymbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
     {
         $priceEntities = $this
             ->priceRepository
             ->getLastItemsForInterval(
                 new \DateInterval($interval),
-                $symbol
+                $userSymbol->getSymbol()
             )
         ;
         if (count($priceEntities) > self::ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION) {
@@ -104,7 +103,7 @@ class BestPriceAnalyzer
 
                 // если падение от цены недостаточное по отношению к максимальной цене за последнее время, то прерываем
                 $highDiff = $this->priceRepository->getLastHighPrice(
-                    $symbol,
+                    $userSymbol->getSymbol(),
                     new \DateInterval('PT24H'),
                 ) - $price;
                 if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < self::LEGAL_FALLEN_PRICE_PERCENTAGE) {
@@ -125,34 +124,34 @@ class BestPriceAnalyzer
         }
 
         if ($result) {
-            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $symbol, $direction * -1);
+            $this->reason = $this->buildReason(self::PRICE_RECENTLY_CHANGED_DIRECTION, $price, $userSymbol->getSymbol(), $direction * -1);
         }
         return $result;
     }
 
-    private function isPriceOnRisingUp(Symbol $symbol, float $price): bool
+    private function isPriceOnRisingUp(UserSymbol $userSymbol, float $price): bool
     {
-        return $this->isPriceMovingOnShortInterval($symbol, $price, self::DIRECTION_PRICE_RISING_UP);
+        return $this->isPriceMovingOnShortInterval($userSymbol, $price, self::DIRECTION_PRICE_RISING_UP);
     }
 
-    private function isPriceOnFallingDown(Symbol $symbol, float $price): bool
+    private function isPriceOnFallingDown(UserSymbol $userSymbol, float $price): bool
     {
-        return $this->isPriceMovingOnShortInterval($symbol, $price, self::DIRECTION_PRICE_FALLING_DOWN);
+        return $this->isPriceMovingOnShortInterval($userSymbol, $price, self::DIRECTION_PRICE_FALLING_DOWN);
     }
 
-    private function isPriceMovingOnShortInterval(Symbol $symbol, float $price, int $direction): bool
+    private function isPriceMovingOnShortInterval(UserSymbol $userSymbol, float $price, int $direction): bool
     {
-        if (!$symbol->isRiskable() && $direction === self::DIRECTION_PRICE_RISING_UP) {
+        if (!$userSymbol->isRiskable() && $direction === self::DIRECTION_PRICE_RISING_UP) {
             return false;
         }
         $avgPriceShortInterval = $this
             ->priceRepository
             ->getAvgForInterval(
                 new \DateInterval(self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES),
-                $symbol
+                $userSymbol->getSymbol()
             )
         ;
-        if (!$this->checkDirection($symbol, $price, $direction)) {
+        if (!$this->checkDirection($userSymbol, $price, $direction)) {
             return false;
         }
 
@@ -164,7 +163,7 @@ class BestPriceAnalyzer
 
         // записываем причину только для повышения (они же только рисковые), поскольку тут произойдет покупка
         if ($direction === self::DIRECTION_PRICE_RISING_UP) {
-            $this->reason = $this->buildReason(self::PRICE_MOVING_ON_SHORT_INTERVAL, $price, $symbol, $direction);
+            $this->reason = $this->buildReason(self::PRICE_MOVING_ON_SHORT_INTERVAL, $price, $userSymbol->getSymbol(), $direction);
         }
         return true;
     }
@@ -172,13 +171,13 @@ class BestPriceAnalyzer
     /**
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
-    private function checkDirection(Symbol $symbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
+    private function checkDirection(UserSymbol $userSymbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
     {
         $avgPriceShortInterval = $this
             ->priceRepository
             ->getAvgForInterval(
                 new \DateInterval($interval),
-                $symbol
+                $userSymbol->getSymbol()
             )
         ;
         return ($price - $avgPriceShortInterval) * $direction > 0;
@@ -213,7 +212,7 @@ class BestPriceAnalyzer
         return \sprintf('%s: %s %s [%s]', $reason, $price, $symbol->getName(), $direction > 0 ? 'rising up' : 'falling down');
     }
 
-    private function isBestPriceForDirectionUntilPlato(Symbol $symbol, float $price, int $direction): bool
+    private function isBestPriceForDirectionUntilPlato(UserSymbol $userSymbol, float $price, int $direction): bool
     {
         // todo maybe plato is not needed, work only with changed directions
         return false;
@@ -222,7 +221,7 @@ class BestPriceAnalyzer
             ->priceRepository
             ->getAvgForInterval(
                 new \DateInterval(self::HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO),
-                $symbol
+                $userSymbol
             )
         ;
 
@@ -232,11 +231,11 @@ class BestPriceAnalyzer
             return false;
         }
 
-        if (!$this->checkDirection($symbol, $price, $direction, self::HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO)) {
+        if (!$this->checkDirection($userSymbol, $price, $direction, self::HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO)) {
             return false;
         }
 
-        $this->reason = $this->buildReason(self::PRICE_IS_ON_PLATO, $price, $symbol, $direction);
+        $this->reason = $this->buildReason(self::PRICE_IS_ON_PLATO, $price, $userSymbol, $direction);
         return true;
     }
 

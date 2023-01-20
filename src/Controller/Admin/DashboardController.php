@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\Order;
 use App\Entity\Symbol;
+use App\Entity\User;
 use App\Form\Admin\DateIntervalType;
 use App\Model\Admin\DateIntervalModel;
 use App\Repository\OrderRepository;
@@ -29,6 +30,8 @@ class DashboardController extends AbstractController
         PriceRepository $priceRepository,
         OrderRepository $orderRepository,
     ): Response {
+        /** @var User $user */
+        $user = $this->getUser();
         $model = new DateIntervalModel();
         $form = $this->createForm(DateIntervalType::class, $model, [
             'method' => 'GET',
@@ -37,10 +40,10 @@ class DashboardController extends AbstractController
 
         if ($model->dateStart || $model->dateEnd) {
             $prices = $priceRepository->getLastItemsForDates($model->dateStart, $model->dateEnd, $symbol);
-            $allOrders = $orderRepository->getLastItemsForDates($model->dateStart, $model->dateEnd, $symbol);
+            $allOrders = $orderRepository->getLastItemsForDates($user, $model->dateStart, $model->dateEnd, $symbol);
         } else {
             $prices = $priceRepository->getLastItemsForInterval(new \DateInterval("P{$model->daysAgo}D"), $symbol);
-            $allOrders = $orderRepository->getLastItemsForInterval(new \DateInterval("P{$model->daysAgo}D"), $symbol);
+            $allOrders = $orderRepository->getLastItemsForInterval($user, new \DateInterval("P{$model->daysAgo}D"), $symbol);
         }
         $orders = array_filter($allOrders, fn (Order $order) => $order->getSellDate() !== null);
 
@@ -56,13 +59,15 @@ class DashboardController extends AbstractController
     #[Route(path: '/admin/dashboard/orders', name: 'admin_dashboard_orders')]
     public function orders(Request $request, NormalizerInterface $normalizer, OrderRepository $orderRepository): Response
     {
+        /** @var User $user */
+        $user = $this->getUser();
         $model = new DateIntervalModel();
         $form = $this->createForm(DateIntervalType::class, $model, [
             'method' => 'GET',
         ]);
         $form->handleRequest($request);
-        $orders = $orderRepository->getLastItemsForDates($model->dateStart, $model->dateEnd);
-        $counts = $orderRepository->getSymbolCountsForDates($model->dateStart, $model->dateEnd, true);
+        $orders = $orderRepository->getLastItemsForDates($user, $model->dateStart, $model->dateEnd);
+        $counts = $orderRepository->getSymbolCountsForDates($user, $model->dateStart, $model->dateEnd, true);
 
         return $this->render('admin/dashboard/orders.html.twig', [
             'form' => $form->createView(),

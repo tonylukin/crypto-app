@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
-    private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 5;
+    private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;
     public const MINIMAL_PROFIT_PERCENT = 1;
 
     public function __construct(

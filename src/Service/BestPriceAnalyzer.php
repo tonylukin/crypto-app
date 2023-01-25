@@ -24,7 +24,7 @@ class BestPriceAnalyzer
     private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
 
     private const LEGAL_STEP_MOVING_PERCENTAGE = 5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
-    private const LEGAL_FALLEN_PRICE_PERCENTAGE = 4; // разница между максимальным значением за последнее время и текущим при достижении дна
+    private const LEGAL_FALLEN_PRICE_PERCENTAGE = 8; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
 
     private ?string $reason = null;

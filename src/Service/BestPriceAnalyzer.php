@@ -26,6 +26,7 @@ class BestPriceAnalyzer
     private const LEGAL_STEP_MOVING_PERCENTAGE = 5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
     private const LEGAL_FALLEN_PRICE_PERCENTAGE = 8; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
+    private const MINIMAL_PROFIT_PERCENT = 2;
 
     private ?string $reason = null;
 
@@ -195,7 +196,7 @@ class BestPriceAnalyzer
         }
 
         $profitPercent = $profit / $expenses * 100;
-        if ($profitPercent < OrderManager::MINIMAL_PROFIT_PERCENT) {
+        if ($profitPercent < self::MINIMAL_PROFIT_PERCENT) {
             return null;
         }
 

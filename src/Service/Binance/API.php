@@ -8,7 +8,7 @@ use App\Service\ApiInterface;
 
 class API extends \Binance\API implements ApiInterface
 {
-    private const FEE_PERCENT = 0.1;
+    private const FEE_PERCENT = 0.5;
 
     public function __construct(string $apiKey, string $apiSecret)
     {

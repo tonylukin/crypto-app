@@ -8,6 +8,7 @@ use App\Entity\Order;
 use App\Entity\Symbol;
 use App\Entity\UserSymbol;
 use App\Repository\PriceRepository;
+use Psr\Log\LoggerInterface;
 
 class BestPriceAnalyzer
 {
@@ -27,12 +28,14 @@ class BestPriceAnalyzer
     private const LEGAL_FALLEN_PRICE_PERCENTAGE = 8; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
     private const MINIMAL_PROFIT_PERCENT = 2;
+    private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
 
     private ?string $reason = null;
 
     public function __construct(
         private PriceRepository $priceRepository,
         private ApiInterface $api,
+        private LoggerInterface $logger,
     ) {
     }
 
@@ -193,6 +196,11 @@ class BestPriceAnalyzer
 
         if ($profit < 0) {
             return null;
+        }
+
+        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', self::MAX_DAYS_WAITING_FOR_PROFIT)) <= new \DateTimeImmutable()) {
+            $this->logger->warning(sprintf("Was waiting too long for profit, sold after %d days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}", self::MAX_DAYS_WAITING_FOR_PROFIT));
+            return $profit;
         }
 
         $profitPercent = $profit / $expenses * 100;

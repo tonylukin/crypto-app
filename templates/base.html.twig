@@ -44,16 +44,20 @@
                         {% endfor %}
                     </ul>
                 </li>
+                {% set isAdmin = is_granted('ROLE_ADMIN') %}
                 {% set menuItems = [
-                    ['Orders', 'admin_dashboard_orders'],
-                    ['Cron report', 'admin_dashboard_cron_report'],
-                    ['Symbols', 'admin_symbol_list'],
+                    ['Orders', 'admin_dashboard_orders', true],
+                    ['Symbols', 'admin_symbol_list', true],
+                    ['Cron report', 'admin_dashboard_cron_report', isAdmin],
+                    ['Users', 'admin_user_list', isAdmin],
                 ] %}
                 {% for menuItem in menuItems %}
-                    <li class="nav-item">
-                        <a class="nav-link {{ app.request.get('_route') == menuItem[1] ? 'active' : '' }}"
-                           href="{{ path(menuItem[1]) }}">{{ menuItem[0] }}</a>
-                    </li>
+                    {% if menuItem[2] %}
+                        <li class="nav-item">
+                            <a class="nav-link {{ app.request.get('_route') == menuItem[1] ? 'active' : '' }}"
+                               href="{{ path(menuItem[1]) }}">{{ menuItem[0] }}</a>
+                        </li>
+                    {% endif %}
                 {% endfor %}
                 <li class="nav-item ms-0"><a class="nav-link" href="{{ path('app_logout') }}">Logout</a></li>
             </ul>

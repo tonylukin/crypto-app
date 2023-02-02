@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Users list{% endblock %}
+
+{% block body %}
+    <div class="mb-3">
+        <a class="btn btn-primary btn-lg" href="{{ path('admin_user_create') }}">Create</a>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Roles</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {# @var App\Entity\User user #}
+        {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.roles|join(', ') }}</td>
+                <td>
+                    <a class="btn btn-success" href="{{ path('admin_user_edit', {id: user.id}) }}">edit</a>
+                    <a class="btn btn-danger" href="{{ path('admin_user_delete', {id: user.id}) }}">delete</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% include 'pagination.html.twig' with ({data: users}) only %}
+{% endblock %}

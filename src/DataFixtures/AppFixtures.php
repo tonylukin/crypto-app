@@ -6,6 +6,7 @@ use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectManager;
+use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
@@ -13,6 +14,7 @@ class AppFixtures extends Fixture
     public function __construct(
         private UserPasswordHasherInterface $userPasswordHasher,
         private EntityManagerInterface $entityManager,
+        private Encryptor $encryptor,
     )
     {}
 
@@ -23,6 +25,8 @@ class AppFixtures extends Fixture
             ->setRoles([User::ROLE_ADMIN])
         ;
         $user->setPassword($this->userPasswordHasher->hashPassword($user, '28051989'));
+        $user->setBinanceApiKey('123');
+        $user->setBinanceApiSecret($this->encryptor->encrypt('123456'));
         $manager->persist($user);
 
         $manager->flush();

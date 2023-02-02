@@ -12,6 +12,7 @@ use App\Model\Admin\DateIntervalModel;
 use App\Repository\OrderRepository;
 use App\Repository\PriceRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -76,6 +77,7 @@ class DashboardController extends AbstractController
         ]);
     }
 
+    #[IsGranted(User::ROLE_ADMIN)]
     #[Route(path: '/admin/dashboard/cron-report', name: 'admin_dashboard_cron_report')]
     public function cronReport(EntityManagerInterface $entityManager): Response
     {

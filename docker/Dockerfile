@@ -1,10 +1,18 @@
-FROM php:8.0-fpm
+FROM php:8.2-fpm
 
-RUN apt-get update && \
-    apt-get install -y git zip libpq-dev \
+RUN apt-get update \
+    && apt-get -y install cron \
+    && apt-get install -y git zip libpq-dev \
     && pecl install xdebug \
     && docker-php-ext-enable xdebug \
     && docker-php-ext-install pdo pdo_mysql opcache gettext
+
+# copy the crontab in a location where it will be parsed by the system
+COPY ./crontab /etc/cron.d/crontab
+# owner can read and write into the crontab, group and others can read it
+RUN chmod 0644 /etc/cron.d/crontab
+# running our crontab using the binary from the package we installed
+RUN /usr/bin/crontab /etc/cron.d/crontab
 
 RUN docker-php-ext-configure pcntl --enable-pcntl \
   && docker-php-ext-install \

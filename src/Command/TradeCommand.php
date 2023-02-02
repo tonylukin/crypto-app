@@ -7,15 +7,16 @@ namespace App\Command;
 use App\Entity\Symbol;
 use App\Repository\SymbolRepository;
 use App\Service\OrderManager;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'app:trade')]
 class TradeCommand extends Command
 {
-    protected static $defaultName = 'app:trade';
     private SymfonyStyle $io;
 
     public function __construct(

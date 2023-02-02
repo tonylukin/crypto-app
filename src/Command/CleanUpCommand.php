@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Command;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'app:clean-up')]
 class CleanUpCommand extends Command
 {
-    protected static $defaultName = 'app:clean-up';
     private SymfonyStyle $io;
 
     public function __construct(

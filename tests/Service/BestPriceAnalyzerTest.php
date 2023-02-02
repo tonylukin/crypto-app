@@ -16,7 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 class BestPriceAnalyzerTest extends KernelTestCase
 {
     private ?BestPriceAnalyzer $bestPriceAnalyzer;
-    private ApiInterface|\PHPUnit\Framework\MockObject\MockObject $apiMock;
+    private ApiInterface $apiMock;
     private array $symbols;
     private User $user;
 
@@ -27,8 +27,8 @@ class BestPriceAnalyzerTest extends KernelTestCase
         $this->apiMock = $this->createMock(ApiInterface::class);
         $container->set(API::class, $this->apiMock);
         $this->bestPriceAnalyzer = $container->get(BestPriceAnalyzer::class);
-        $this->symbolRepository = $container->get(SymbolRepository::class);
-        $this->symbols = $this->symbolRepository->getActiveList();
+        $symbolRepository = $container->get(SymbolRepository::class);
+        $this->symbols = $symbolRepository->getActiveList();
         $this->user = new User();
     }
 

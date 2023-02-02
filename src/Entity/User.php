@@ -3,26 +3,35 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use App\Service\ExchangeCredentialsInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+#[UniqueEntity('username')]
+class User implements UserInterface, PasswordAuthenticatedUserInterface, ExchangeCredentialsInterface
 {
     public const ROLE_USER = 'ROLE_USER';
     public const ROLE_ADMIN = 'ROLE_ADMIN';
+    public const ROLES = [
+        self::ROLE_ADMIN,
+    ];
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    private ?int $id;
+    private ?int $id = null;
 
+    #[Assert\NotBlank]
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private ?string $username;
 
+    #[Assert\Choice(choices: User::ROLES, multiple: true)]
     #[ORM\Column(type: 'json', nullable: true)]
     private array $roles = [];
 
@@ -31,6 +40,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\OneToMany(targetEntity: Order::class, mappedBy: "user")]
     private Collection $orders;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $binanceApiKey = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $binanceApiSecret = null;
 
     public function __construct()
     {
@@ -127,5 +142,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getOrders(): Collection
     {
         return $this->orders;
+    }
+
+    public function getBinanceApiKey(): ?string
+    {
+        return $this->binanceApiKey;
+    }
+
+    public function setBinanceApiKey(?string $binanceApiKey): self
+    {
+        $this->binanceApiKey = $binanceApiKey;
+
+        return $this;
+    }
+
+    public function getBinanceApiSecret(): ?string
+    {
+        return $this->binanceApiSecret;
+    }
+
+    public function setBinanceApiSecret(?string $binanceApiSecret): self
+    {
+        $this->binanceApiSecret = $binanceApiSecret;
+
+        return $this;
     }
 }

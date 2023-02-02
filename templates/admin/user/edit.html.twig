@@ -1,0 +1,10 @@
+{# @var \App\Entity\User user #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit user{% endblock %}
+
+{% block body %}
+    <h2>Edit user {{ user.userIdentifier }}[{{ user.id }}]</h2>
+
+    {% include 'admin/user/_form.html.twig' with {form: form} %}
+{% endblock %}

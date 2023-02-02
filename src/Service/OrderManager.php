@@ -65,6 +65,8 @@ class OrderManager
             ;
             $this->entityManager->persist($order);
             $this->entityManager->flush();
+
+            $this->api->setCredentials($user);
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $price);
             $this->logger->warning('Buy response', ['response' => $response]);
             $this->entityManager->commit();
@@ -114,6 +116,8 @@ class OrderManager
                 ->setSellReason($this->bestPriceAnalyzer->getReason())
             ;
             $this->entityManager->flush();
+
+            $this->api->setCredentials($user);
             $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
             $this->logger->warning('Sell response', ['response' => $response]);
             $this->entityManager->commit();

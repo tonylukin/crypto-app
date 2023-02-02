@@ -1,0 +1,9 @@
+{# @var data \Pagerfanta\Pagerfanta #}
+
+{% if data.nbPages is defined and data.nbPages > 1 %}
+    {% if tempate is not defined %}
+        {% set template = 'twitter_bootstrap4' %}
+    {% endif %}
+
+    {{ pagerfanta(data, template) }}
+{% endif %}

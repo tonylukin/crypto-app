@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
-    private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 6;
+    private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;
 
     public function __construct(
         private EntityManagerInterface $entityManager,

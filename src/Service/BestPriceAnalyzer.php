@@ -15,7 +15,7 @@ class BestPriceAnalyzer
     private const HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES = 'PT4H';
     private const HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO = 'PT8H';
     private const MAX_PERCENT_DIFF_ON_MOVING = 3;
-    private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 6;
+    private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 48; // 24 hours
 
     private const DIRECTION_PRICE_RISING_UP = 1;
     private const DIRECTION_PRICE_FALLING_DOWN = -1;
@@ -25,7 +25,7 @@ class BestPriceAnalyzer
     private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
 
     private const LEGAL_STEP_MOVING_PERCENTAGE = 5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
-    private const LEGAL_FALLEN_PRICE_PERCENTAGE = 8; // разница между максимальным значением за последнее время и текущим при достижении дна
+    private const MIN_FALLEN_PRICE_PERCENTAGE = 7; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
     private const MINIMAL_PROFIT_PERCENT = 2;
     private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
@@ -108,9 +108,9 @@ class BestPriceAnalyzer
                 // если падение от цены недостаточное по отношению к максимальной цене за последнее время, то прерываем
                 $highDiff = $this->priceRepository->getLastHighPrice(
                     $userSymbol->getSymbol(),
-                    new \DateInterval('PT24H'),
+                    new \DateInterval('PT48H'),
                 ) - $price;
-                if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < self::LEGAL_FALLEN_PRICE_PERCENTAGE) {
+                if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < self::MIN_FALLEN_PRICE_PERCENTAGE) {
                     return false;
                 }
             }

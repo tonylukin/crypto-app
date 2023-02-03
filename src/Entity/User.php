@@ -167,4 +167,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Exchang
 
         return $this;
     }
+
+    public function getHuobiApiKey(): ?string
+    {
+        return null;
+    }
+
+    public function getHuobiApiSecret(): ?string
+    {
+        return null;
+    }
 }

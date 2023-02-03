@@ -15,6 +15,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.2",
         "doctrine/orm": "^2.12",
         "jaggedsoft/php-binance-api": "^0.5.28",
+        "linwj/huobi": "^2.2",
         "nzo/url-encryptor-bundle": "^6.2",
         "pagerfanta/pagerfanta": "^3.7",
         "sensio/framework-extra-bundle": "^6.2",

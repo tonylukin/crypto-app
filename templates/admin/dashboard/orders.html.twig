@@ -31,6 +31,7 @@
                 <th>Total</th>
                 <th>Profit</th>
                 <th>Percent</th>
+                <th></th>
             </tr>
             </thead>
             <tbody>
@@ -53,6 +54,9 @@
                     <td>{{ currentTotal }}</td>
                     <td>{{ order.profit }}</td>
                     <td>{{ percent }}</td>
+                    <td>
+                        <a href="{{ path('admin_order_unsold', {id: order.id}) }}" class="btn btn-info" onclick="return confirm('Are u sure?');">Set unsold</a>
+                    </td>
                 </tr>
                 {% set total = total + (order.sellDate ? currentTotal : 0) %}
                 {% set totalProfit = totalProfit + order.profit %}
@@ -64,6 +68,7 @@
                 <td>{{ totalProfit ? (totalProfit / total * 100)|round(2) : 0 }}</td>
                 <td>{{ totalProfit }}</td>
                 <td>{{ totalProfit ? (totalPercent / completedCount)|round(2) : 0 }}</td>
+                <td></td>
             </tr>
             </tbody>
         </table>

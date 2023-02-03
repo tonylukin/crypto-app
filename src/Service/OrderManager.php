@@ -135,4 +135,16 @@ class OrderManager
         $this->logger->info("Sell order created for {$price} {$userSymbol->getSymbol()->getName()}");
         return true;
     }
+
+    public function unsold(Order $order): void
+    {
+        $order
+            ->setStatus(Order::STATUS_BUY)
+            ->setProfit(null)
+            ->setSellPrice(null)
+            ->setSellDate(null)
+            ->setSellReason(null)
+        ;
+        $this->entityManager->flush();
+    }
 }

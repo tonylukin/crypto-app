@@ -3,8 +3,8 @@ FROM php:8.2-fpm
 RUN apt-get update \
     && apt-get -y install cron \
     && apt-get install -y git zip libpq-dev \
-    && pecl install xdebug \
-    && docker-php-ext-enable xdebug \
+#    && pecl install xdebug \
+#    && docker-php-ext-enable xdebug \
     && docker-php-ext-install pdo pdo_mysql opcache gettext
 
 # copy the crontab in a location where it will be parsed by the system

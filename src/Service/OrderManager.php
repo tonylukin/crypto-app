@@ -68,7 +68,7 @@ class OrderManager
 
             $this->api->setCredentials($user);
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $price);
-            $this->logger->warning('Buy response', ['response' => $response]);
+            $this->logger->warning('Buy response', ['response' => $response, 'quantity' => $quantity, 'price' => $price]);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {
@@ -119,7 +119,7 @@ class OrderManager
 
             $this->api->setCredentials($user);
             $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
-            $this->logger->warning('Sell response', ['response' => $response]);
+            $this->logger->warning('Sell response', ['response' => $response, 'quantity' => $pendingOrder->getQuantity(), 'price' => $price]);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {

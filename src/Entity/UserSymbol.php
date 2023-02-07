@@ -19,7 +19,7 @@ class UserSymbol
     private ?float $totalPrice;
 
     #[ORM\Id]
-    #[ORM\ManyToOne(targetEntity: Symbol::class, inversedBy: 'userSymbols', cascade: ['ALL'])]
+    #[ORM\ManyToOne(targetEntity: Symbol::class, inversedBy: 'userSymbols')]
     private ?Symbol $symbol = null;
 
     #[ORM\Id]

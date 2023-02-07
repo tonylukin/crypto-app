@@ -53,7 +53,7 @@ class TradeCommand extends Command
 
         foreach ($symbols as $symbol) {
             foreach ($symbol->getUserSymbols() as $userSymbol) {
-                $this->io->write("Start trading for {$symbol->getName()} of user {$userSymbol->getUser()->getUserIdentifier()}\n");
+                $this->io->write("Start trading for {$symbol->getName()} of user {$userSymbol->getUser()->getUserIdentifier()}");
                 $this->orderManager->buy($userSymbol->getUser(), $userSymbol, $userSymbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);
                 $this->orderManager->sell($userSymbol->getUser(), $userSymbol);
             }

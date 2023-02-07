@@ -57,33 +57,13 @@ class DashboardController extends AbstractController
         ]);
     }
 
-    #[Route(path: '/admin/dashboard/orders', name: 'admin_dashboard_orders')]
-    public function orders(Request $request, NormalizerInterface $normalizer, OrderRepository $orderRepository): Response
-    {
-        /** @var User $user */
-        $user = $this->getUser();
-        $model = new DateIntervalModel();
-        $form = $this->createForm(DateIntervalType::class, $model, [
-            'method' => 'GET',
-        ]);
-        $form->handleRequest($request);
-        $orders = $orderRepository->getLastItemsForDates($user, $model->dateStart, $model->dateEnd);
-        $counts = $orderRepository->getSymbolCountsForDates($user, $model->dateStart, $model->dateEnd, true);
-
-        return $this->render('admin/dashboard/orders.html.twig', [
-            'form' => $form->createView(),
-            'orders' => $normalizer->normalize($orders, 'json', ['groups' => 'order_price_details']),
-            'counts' => $counts,
-        ]);
-    }
-
     #[IsGranted(User::ROLE_ADMIN)]
     #[Route(path: '/admin/dashboard/cron-report', name: 'admin_dashboard_cron_report')]
     public function cronReport(EntityManagerInterface $entityManager): Response
     {
         $connection = $entityManager->getConnection();
         $sql = <<<SQL
-            SELECT * FROM cron_report WHERE job_id = 1 ORDER BY id DESC LIMIT 50;
+            SELECT * FROM cron_report ORDER BY id DESC LIMIT 30;
         SQL;
         $data = $connection->fetchAllAssociative($sql);
 

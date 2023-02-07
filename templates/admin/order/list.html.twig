@@ -17,7 +17,7 @@
     {{ form_end(form, {render_rest: false}) }}
 
     <div class="mt-4">
-        <h2>All symbols</h2>
+        <h2>All orders</h2>
         <table class="table table-bordered table-striped">
             <thead>
             <tr>
@@ -35,15 +35,17 @@
             </tr>
             </thead>
             <tbody>
+            {% set returnUrl = app.request.requestUri %}
             {% set total = 0 %}
             {% set totalProfit = 0 %}
             {% set totalPercent = 0 %}
             {% set completedCount = 0 %}
+            {% set daysInterval = 0 %}
             {# @var \App\Entity\Order order #}
             {% for order in orders %}
                 {% set currentTotal = order.price * order.quantity %}
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
-                <tr class="{{ order.sellPrice ? 'table-success' : 'table-danger' }}">
+                <tr class="{{ order.sold ? 'table-success' : 'table-danger' }}">
                     <td>{{ order.id }}</td>
                     <td>{{ order.symbol.name }}</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
@@ -55,17 +57,23 @@
                     <td>{{ order.profit }}</td>
                     <td>{{ percent }}</td>
                     <td>
-                        <a href="{{ path('admin_order_unsold', {id: order.id}) }}" class="btn btn-info" onclick="return confirm('Are u sure?');">Set unsold</a>
-                        <a href="{{ path('admin_order_delete', {id: order.id}) }}" class="btn btn-danger" onclick="return confirm('Are u sure?');">Delete</a>
+                        {% if order.sold %}
+                            <a href="{{ path('admin_order_unsold', {id: order.id, returnUrl: returnUrl}) }}" class="btn btn-info" onclick="return confirm('Are u sure?');">Set unsold</a>
+                        {% else %}
+                            <a href="{{ path('admin_order_edit', {id: order.id, returnUrl: returnUrl}) }}" class="btn btn-success">Edit</a>
+                            <a href="{{ path('admin_order_delete', {id: order.id, returnUrl: returnUrl}) }}" class="btn btn-danger" onclick="return confirm('Are u sure?');">Delete</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% set total = total + (order.sellDate ? currentTotal : 0) %}
                 {% set totalProfit = totalProfit + order.profit %}
                 {% set totalPercent = totalPercent + percent %}
                 {% set completedCount = completedCount + (order.sellPrice ? 1 : 0) %}
+                {% set daysInterval = daysInterval + (order.sellDate ? date(order.createdAt).diff(date(order.sellDate)).days : 0) %}
             {% endfor %}
             <tr>
-                <td colspan="7" style="text-align: right">Total:</td>
+                <td colspan="6" style="text-align: right">Total:</td>
+                <td>{{ totalProfit ? (daysInterval / total * 100)|round(2) : 0 }} days avg</td>
                 <td>{{ totalProfit ? (totalProfit / total * 100)|round(2) : 0 }}</td>
                 <td>{{ totalProfit }}</td>
                 <td>{{ totalProfit ? (totalPercent / completedCount)|round(2) : 0 }}</td>

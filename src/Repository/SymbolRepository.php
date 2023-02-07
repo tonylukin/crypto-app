@@ -54,8 +54,7 @@ class SymbolRepository extends ServiceEntityRepository
         ;
         if ($user !== null) {
             $qb
-                ->innerJoin('symbol.users', 'users')
-                ->andWhere('users = :user')
+                ->andWhere('userSymbols.user = :user')
                 ->setParameter('user', $user)
             ;
         }

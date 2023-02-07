@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\OrderRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
@@ -220,5 +221,11 @@ class Order
         $this->user = $user;
 
         return $this;
+    }
+
+    #[Groups(['order_price_details'])]
+    public function isSold(): bool
+    {
+        return $this->status === self::STATUS_SELL;
     }
 }

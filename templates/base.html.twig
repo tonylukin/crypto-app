@@ -35,18 +35,20 @@
                     </a>
                     <ul class="dropdown-menu">
                         {# @var \App\Entity\Symbol symbol #}
-                        {% for symbol in getSymbols() %}
+                        {% for symbol in getSymbols(app.user) %}
                             <li>
                                 <a class="dropdown-item"
                                    href="{{ path('admin_dashboard_prices', {symbol: symbol.name, 'days-ago': app.request.get('days-ago')}) }}"
                                 >{{ symbol.name }} [{{ symbol.id }}]</a>
                             </li>
+                        {% else %}
+                            <li><span class="dropdown-item">No symbols</span></li>
                         {% endfor %}
                     </ul>
                 </li>
                 {% set isAdmin = is_granted('ROLE_ADMIN') %}
                 {% set menuItems = [
-                    ['Orders', 'admin_dashboard_orders', true],
+                    ['Orders', 'admin_order_list', true],
                     ['Symbols', 'admin_symbol_list', true],
                     ['Cron report', 'admin_dashboard_cron_report', isAdmin],
                     ['Users', 'admin_user_list', isAdmin],

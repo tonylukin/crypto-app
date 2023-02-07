@@ -61,6 +61,9 @@ class CleanUpCommand extends Command
         ;
         $this->io->writeln('Prices table has been cleaned successfully');
 
+        $output = (string) exec('rm -rf /var/log/journal/');
+        $this->io->writeln("Journal logs purge output: '{$output}'");
+
         return 0;
     }
 }

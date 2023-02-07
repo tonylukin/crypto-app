@@ -13,6 +13,7 @@ use App\Repository\UserSymbolRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -54,6 +55,16 @@ class SymbolController extends AbstractController
         ]);
     }
 
+    #[Route(path: '/admin/symbols/batch-edit', name: 'admin_symbol_batch_edit')]
+    public function batchEdit(Request $request, UserSymbolRepository $userSymbolRepository): RedirectResponse
+    {
+        $symbolIds = $request->get('symbolIds', []);
+        $totalPrice = (float) $request->get('totalPrice');
+        $userSymbolRepository->batchChangeTotalPrice($symbolIds, $this->getUser(), $totalPrice);
+
+        return $this->redirectToRoute('admin_symbol_list');
+    }
+
     #[Route(path: '/admin/symbols/{symbol}', name: 'admin_symbol_edit')]
     #[ParamConverter('symbol', options: ['mapping' => ['symbol' => 'name']])]
     public function edit(
@@ -79,5 +90,17 @@ class SymbolController extends AbstractController
         ]);
     }
 
-    // todo add delete relation action, no relation -> delete symbol
+    #[Route(path: '/admin/symbols/{id}/{symbol}/delete', name: 'admin_symbol_delete')]
+    #[ParamConverter('symbol', options: ['mapping' => ['symbol' => 'name']])]
+    public function delete(User $user, Symbol $symbol, EntityManagerInterface $entityManager): RedirectResponse
+    {
+        $userSymbol = $entityManager->getRepository(UserSymbol::class)->findOneBy([
+            'user' => $user,
+            'symbol' => $symbol,
+        ]);
+        $entityManager->remove($userSymbol);
+        $entityManager->flush();
+
+        return $this->redirectToRoute('admin_symbol_list');
+    }
 }

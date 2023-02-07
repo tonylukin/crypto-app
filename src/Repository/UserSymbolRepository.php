@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Entity\UserSymbol;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<UserSymbol>
@@ -67,6 +68,24 @@ class UserSymbolRepository extends ServiceEntityRepository
             ->setParameter('user', $user)
             ->getQuery()
             ->getResult()
+        ;
+    }
+
+    public function batchChangeTotalPrice(array $symbolIds, UserInterface $user, float $totalPrice): int
+    {
+        if (empty($symbolIds)) {
+            return 0;
+        }
+
+        return $this->createQueryBuilder('us')
+            ->update()
+            ->set('us.totalPrice', $totalPrice)
+            ->where('us.user = :user')
+            ->setParameter('user', $user)
+            ->andWhere('IDENTITY(us.symbol) IN (:symbolIds)')
+            ->setParameter('symbolIds', $symbolIds)
+            ->getQuery()
+            ->getSingleScalarResult()
         ;
     }
 }

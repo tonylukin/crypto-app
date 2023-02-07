@@ -3,33 +3,53 @@
 {% block title %}Symbol list{% endblock %}
 
 {% block body %}
+    {% set userId = app.user.id %}
     <div class="mb-3">
         <a class="btn btn-primary btn-lg" href="{{ path('admin_symbol_create') }}">Create</a>
     </div>
 
-    <table class="table table-bordered table-striped">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Riskable</th>
-            <th>Total price</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        {# @var \App\Entity\UserSymbol userSymbol #}
-        {% for userSymbol in userSymbols %}
-            <tr class="{{ userSymbol.active ? '' : 'table-danger' }}">
-                <td>{{ userSymbol.symbol.id }}</td>
-                <td>{{ userSymbol.symbol.name }}</td>
-                <td>{{ userSymbol.riskable }}</td>
-                <td>{{ userSymbol.totalPrice }}</td>
-                <td>
-                    <a class="btn btn-success" href="{{ path('admin_symbol_edit', {symbol: userSymbol.symbol.name}) }}">edit</a>
-                </td>
+    <form action="{{ path('admin_symbol_batch_edit') }}" method="post">
+        <table class="table table-bordered table-striped">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Riskable</th>
+                <th>Total price</th>
+                <th></th>
+                <th>Change price</th>
             </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+            {# @var \App\Entity\UserSymbol userSymbol #}
+            {% for userSymbol in userSymbols %}
+                <tr class="{{ userSymbol.active ? '' : 'table-danger' }}">
+                    <td>{{ userSymbol.symbol.id }}</td>
+                    <td>{{ userSymbol.symbol.name }}</td>
+                    <td>{{ userSymbol.riskable }}</td>
+                    <td>{{ userSymbol.totalPrice }}</td>
+                    <td>
+                        <a class="btn btn-success" href="{{ path('admin_symbol_edit', {symbol: userSymbol.symbol.name}) }}">edit</a>
+                        <a class="btn btn-danger" href="{{ path('admin_symbol_delete', {id: userId, symbol: userSymbol.symbol.name}) }}">delete</a>
+                    </td>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="symbolIds[]" id="symbolIds" value="{{ userSymbol.symbol.id }}">
+                            {{ userSymbol.symbol.name }}
+                        </label>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="row justify-content-end">
+            <div class="col-auto">
+                <input type="text" placeholder="Total price" class="form-control" name="totalPrice">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success">Change total price</button>
+            </div>
+        </div>
+    </form>
 {% endblock %}

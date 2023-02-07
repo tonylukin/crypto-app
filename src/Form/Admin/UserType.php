@@ -51,7 +51,7 @@ class UserType extends AbstractType
             'second_options' => ['label' => 'Repeat Password'],
             'mapped' => false,
             'required' => $user->getId() === null,
-            'disabled' => true,
+            'disabled' => true, // todo fix empty password hashing and changing on entity
         ]);
 
         $builder->addEventListener(FormEvents::POST_SET_DATA, [$this, 'postSetData']);

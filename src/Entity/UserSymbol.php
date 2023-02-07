@@ -24,7 +24,7 @@ class UserSymbol
 
     #[ORM\Id]
     #[ORM\ManyToOne(targetEntity: User::class)]
-    private User $user;
+    private ?User $user = null;
 
     public function isActive(): bool
     {
@@ -74,7 +74,7 @@ class UserSymbol
         return $this;
     }
 
-    public function getUser(): User
+    public function getUser(): ?User
     {
         return $this->user;
     }

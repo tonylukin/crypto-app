@@ -4,6 +4,12 @@
 
 {% block body %}
     {% set userId = app.user.id %}
+    <script>
+      function toggleCheckboxes(isAllChecked) {
+        Array.from(document.querySelectorAll('input[type=checkbox]')).forEach(el => el.checked = isAllChecked);
+      }
+    </script>
+
     <div class="mb-3">
         <a class="btn btn-primary btn-lg" href="{{ path('admin_symbol_create') }}">Create</a>
     </div>
@@ -17,7 +23,7 @@
                 <th>Riskable</th>
                 <th>Total price</th>
                 <th></th>
-                <th>Change price</th>
+                <th><label><input type="checkbox" onchange="toggleCheckboxes(this.checked);"> Change price</label></th>
             </tr>
             </thead>
             <tbody>

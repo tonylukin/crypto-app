@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Form\Admin\DateIntervalType;
 use App\Form\Admin\OrderType;
 use App\Model\Admin\DateIntervalModel;
+use App\Model\FlashBagTypes;
 use App\Repository\OrderRepository;
 use App\Service\OrderManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -48,6 +49,7 @@ class OrderController extends AbstractController
     public function unsold(Order $order, Request $request, OrderManager $orderManager): RedirectResponse
     {
         $orderManager->unsold($order);
+        $this->addFlash(FlashBagTypes::INFO, 'Order unsold successfully');
 
         return $this->redirectToReturnUrl($request, 'admin_order_list');
     }
@@ -57,6 +59,7 @@ class OrderController extends AbstractController
     {
         $entityManager->remove($order);
         $entityManager->flush();
+        $this->addFlash(FlashBagTypes::INFO, 'Order deleted successfully');
 
         return $this->redirectToReturnUrl($request, 'admin_order_list');
     }
@@ -64,11 +67,11 @@ class OrderController extends AbstractController
     #[Route(path: '/admin/order/{id}/edit', name: 'admin_order_edit')]
     public function edit(Order $order, Request $request, EntityManagerInterface $entityManager): RedirectResponse|Response
     {
-        //todo use alerts
         $form = $this->createForm(OrderType::class, $order);
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
+            $this->addFlash(FlashBagTypes::SUCCESS, 'Order saved successfully');
 
             return $this->redirectToReturnUrl($request, 'admin_order_list');
         }

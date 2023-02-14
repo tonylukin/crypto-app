@@ -1,0 +1,27 @@
+{# @var \App\Entity\Order order #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block body %}
+    <h2>Settings</h2>
+
+    {{ form_start(form) }}
+
+    {{ form_row(form.disableTrading) }}
+    {{ form_row(form.minFallenPricePercent) }}
+    {{ form_row(form.minProfitPercent) }}
+    {{ form_row(form.maxDaysWaitingForProfit) }}
+    {{ form_row(form.minPricesCountMustHaveBeforeOrder) }}
+    {{ form_row(form.maxPercentDiffOnMoving) }}
+    {{ form_row(form.legalMovingStepPercent) }}
+    {{ form_row(form.hoursExtremelyShortIntervalForPrices) }}
+    {{ form_row(form.minPriceDiffPercentAfterLastSell) }}
+
+    <div class="mt-3">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-danger" href="{{ path('admin_dashboard_prices') }}">Cancel</a>
+    </div>
+
+    {{ form_end(form) }}
+{% endblock %}

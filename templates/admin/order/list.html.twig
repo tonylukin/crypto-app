@@ -47,7 +47,7 @@
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
                 <tr class="{{ order.sold ? 'table-success' : 'table-danger' }}">
                     <td>{{ order.id }}</td>
-                    <td>{{ order.symbol.name }}</td>
+                    <td>{{ order.symbol.name }} [{{ order.symbol.id }}]</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
                     <td>{{ order.quantity }}</td>
                     <td>{{ order.price }}</td>

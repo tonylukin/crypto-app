@@ -52,6 +52,7 @@
                     ['Symbols', 'admin_symbol_list', true],
                     ['Cron report', 'admin_dashboard_cron_report', isAdmin],
                     ['Users', 'admin_user_list', isAdmin],
+                    ['Settings', 'admin_dashboard_settings', true],
                 ] %}
                 {% for menuItem in menuItems %}
                     {% if menuItem[2] %}
@@ -71,6 +72,7 @@
     </div>
 </nav>
 <main class="container mt-3 mb-3">
+    {% include '_flash_message.html.twig' %}
     {% block body %}{% endblock %}
 </main>
 </body>

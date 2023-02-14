@@ -12,10 +12,7 @@ use Psr\Log\LoggerInterface;
 
 class BestPriceAnalyzer
 {
-    private const HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES = 'PT4H';
     private const HOURS_SHORT_INTERVAL_FOR_PRICES_PLATO = 'PT8H';
-    private const MAX_PERCENT_DIFF_ON_MOVING = 3;
-    private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 48; // 24 hours
 
     private const DIRECTION_PRICE_RISING_UP = 1;
     private const DIRECTION_PRICE_FALLING_DOWN = -1;
@@ -24,11 +21,7 @@ class BestPriceAnalyzer
     private const PRICE_MOVING_ON_SHORT_INTERVAL = 'Price moving on short interval';
     private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
 
-    private const LEGAL_STEP_MOVING_PERCENTAGE = 5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
-    private const MIN_FALLEN_PRICE_PERCENTAGE = 7; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 3;
-    private const MINIMAL_PROFIT_PERCENT = 2;
-    private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
 
     private ?string $reason = null;
 
@@ -43,7 +36,7 @@ class BestPriceAnalyzer
     {
         // don't set order before some history obtained
         $pricesCount = $this->priceRepository->count(['symbol' => $userSymbol->getSymbol()]);
-        if ($pricesCount < self::MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER) {
+        if ($pricesCount < $userSymbol->getUser()->getUserSetting()->getMinPricesCountMustHaveBeforeOrder()) {
             return null;
         }
 
@@ -77,8 +70,9 @@ class BestPriceAnalyzer
      * В отличие от checkDirection() этот метод считает разницу по движению цены
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
-    private function isPriceOnMovingRecentlyChangedDirection(UserSymbol $userSymbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
+    private function isPriceOnMovingRecentlyChangedDirection(UserSymbol $userSymbol, float $price, int $direction, string $interval = null): bool
     {
+        $interval ??= sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getHoursExtremelyShortIntervalForPrices());
         $priceEntities = $this
             ->priceRepository
             ->getLastItemsForInterval(
@@ -110,7 +104,7 @@ class BestPriceAnalyzer
                     $userSymbol->getSymbol(),
                     new \DateInterval('PT48H'),
                 ) - $price;
-                if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < self::MIN_FALLEN_PRICE_PERCENTAGE) {
+                if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent()) {
                     return false;
                 }
             }
@@ -120,7 +114,7 @@ class BestPriceAnalyzer
 
                 // в случае подъема после падения смотрим, чтобы шаг цены был равномерным, большие скачки ни к чему
                 if ($direction === self::DIRECTION_PRICE_FALLING_DOWN
-                    && (abs($lastPrice - $price) / $price) * 100 > self::LEGAL_STEP_MOVING_PERCENTAGE
+                    && (abs($lastPrice - $price) / $price) * 100 > $userSymbol->getUser()->getUserSetting()->getLegalMovingStepPercent()
                 ) {
                     return false;
                 }
@@ -151,7 +145,7 @@ class BestPriceAnalyzer
         $avgPriceShortInterval = $this
             ->priceRepository
             ->getAvgForInterval(
-                new \DateInterval(self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES),
+                new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getHoursExtremelyShortIntervalForPrices())),
                 $userSymbol->getSymbol()
             )
         ;
@@ -160,7 +154,7 @@ class BestPriceAnalyzer
         }
 
         $diffPercent = abs($price - $avgPriceShortInterval) / $price * 100;
-        if ($diffPercent < self::MAX_PERCENT_DIFF_ON_MOVING) {
+        if ($diffPercent < $userSymbol->getUser()->getUserSetting()->getMaxPercentDiffOnMoving()) {
             // very small difference
             return false;
         }
@@ -175,8 +169,9 @@ class BestPriceAnalyzer
     /**
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
-    private function checkDirection(UserSymbol $userSymbol, float $price, int $direction, string $interval = self::HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES): bool
+    private function checkDirection(UserSymbol $userSymbol, float $price, int $direction, string $interval = null): bool
     {
+        $interval ??= sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getHoursExtremelyShortIntervalForPrices());
         $avgPriceShortInterval = $this
             ->priceRepository
             ->getAvgForInterval(
@@ -198,13 +193,14 @@ class BestPriceAnalyzer
             return null;
         }
 
-        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', self::MAX_DAYS_WAITING_FOR_PROFIT)) <= new \DateTimeImmutable()) {
-            $this->logger->warning(sprintf("Was waiting too long for profit, sold after %d days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}", self::MAX_DAYS_WAITING_FOR_PROFIT));
+        $maxDaysWaitingForProfit = $pendingOrder->getUser()->getUserSetting()->getMaxDaysWaitingForProfit();
+        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', $maxDaysWaitingForProfit)) <= new \DateTimeImmutable()) {
+            $this->logger->warning("Was waiting too long for profit, sold after {$maxDaysWaitingForProfit} days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}");
             return $profit;
         }
 
         $profitPercent = $profit / $expenses * 100;
-        if ($profitPercent < self::MINIMAL_PROFIT_PERCENT) {
+        if ($profitPercent < $pendingOrder->getUser()->getUserSetting()->getMinProfitPercent()) {
             return null;
         }
 
@@ -235,7 +231,7 @@ class BestPriceAnalyzer
         ;
 
         $diffPercent = abs($price - $avgPriceShortInterval) / $price * 100;
-        if ($diffPercent > self::MAX_PERCENT_DIFF_ON_MOVING) {
+        if ($diffPercent > $userSymbol->getUser()->getUserSetting()->getMaxPercentDiffOnMoving()) {
             // not a plato, rising or failing price
             return false;
         }

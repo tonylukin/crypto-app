@@ -47,6 +47,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Exchang
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $binanceApiSecret = null;
 
+    #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'], fetch: 'EAGER')]
+    private ?UserSetting $userSetting = null;
+
     public function __construct()
     {
         $this->orders = new ArrayCollection();
@@ -176,5 +179,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Exchang
     public function getHuobiApiSecret(): ?string
     {
         return null;
+    }
+
+    public function getUserSetting(): UserSetting
+    {
+        if ($this->userSetting === null) {
+            $this->userSetting = new UserSetting();
+            $this->userSetting->setUser($this);
+        }
+
+        return $this->userSetting;
+    }
+
+    public function setUserSetting(UserSetting $userSetting): self
+    {
+        // set the owning side of the relation if necessary
+        if ($userSetting->getUser() !== $this) {
+            $userSetting->setUser($this);
+        }
+
+        $this->userSetting = $userSetting;
+
+        return $this;
     }
 }

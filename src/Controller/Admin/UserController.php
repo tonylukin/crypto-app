@@ -6,6 +6,7 @@ namespace App\Controller\Admin;
 
 use App\Entity\User;
 use App\Form\Admin\UserType;
+use App\Model\FlashBagTypes;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
@@ -39,6 +40,7 @@ class UserController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($user);
             $entityManager->flush();
+            $this->addFlash(FlashBagTypes::SUCCESS, 'User created successfully');
 
             return $this->redirectToRoute('admin_user_list');
         }
@@ -58,6 +60,7 @@ class UserController extends AbstractController
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
+            $this->addFlash(FlashBagTypes::SUCCESS, 'User updated successfully');
 
             return $this->redirectToRoute('admin_user_list');
         }
@@ -73,6 +76,7 @@ class UserController extends AbstractController
     {
         $entityManager->remove($user);
         $entityManager->flush();
+        $this->addFlash(FlashBagTypes::INFO, 'User deleted successfully');
 
         return $this->redirectToRoute('admin_user_list');
     }

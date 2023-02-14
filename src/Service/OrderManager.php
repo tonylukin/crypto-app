@@ -13,8 +13,6 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
-    private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;
-
     public function __construct(
         private EntityManagerInterface $entityManager,
         private OrderRepository $orderRepository,
@@ -42,7 +40,7 @@ class OrderManager
         // если только что была продажа, смотрим изменение цены - она должна измениться мин. на 5% и упасть
         $order = $this->orderRepository->getLastFinishedOrder($user, $userSymbol->getSymbol());
         if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()
-            && ($order->getSellPrice() - $price) / $price * 100 < self::MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL) {
+            && ($order->getSellPrice() - $price) / $price * 100 < $user->getUserSetting()->getMinPriceDiffPercentAfterLastSell()) {
 //            $this->logger->warning("Not enough time and price difference from the last order for symbol {$symbol->getName()}");
             return false;
         }

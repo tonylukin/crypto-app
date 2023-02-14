@@ -12,11 +12,12 @@ use Symfony\Component\Serializer\Annotation\Groups;
 #[ORM\UniqueConstraint(name: "ix_symbol_name", fields: ["name"])]
 class Symbol
 {
-    public const DEFAULT_TOTAL_PRICE_USD = 100;
+    public const DEFAULT_TOTAL_PRICE_USD = 500;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['order_price_details'])]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 32)]

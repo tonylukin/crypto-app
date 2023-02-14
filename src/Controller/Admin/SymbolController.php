@@ -8,6 +8,7 @@ use App\Entity\Symbol;
 use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Form\Admin\SymbolType;
+use App\Model\FlashBagTypes;
 use App\Repository\SymbolRepository;
 use App\Repository\UserSymbolRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -46,6 +47,7 @@ class SymbolController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($userSymbol);
             $entityManager->flush();
+            $this->addFlash(FlashBagTypes::SUCCESS, 'Symbol created successfully');
 
             return $this->redirectToRoute('admin_symbol_list');
         }
@@ -60,7 +62,8 @@ class SymbolController extends AbstractController
     {
         $symbolIds = $request->get('symbolIds', []);
         $totalPrice = (float) $request->get('totalPrice');
-        $userSymbolRepository->batchChangeTotalPrice($symbolIds, $this->getUser(), $totalPrice);
+        $count = $userSymbolRepository->batchChangeTotalPrice($symbolIds, $this->getUser(), $totalPrice);
+        $this->addFlash(FlashBagTypes::SUCCESS, "{$count} symbols updated successfully");
 
         return $this->redirectToRoute('admin_symbol_list');
     }
@@ -80,6 +83,7 @@ class SymbolController extends AbstractController
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
+            $this->addFlash(FlashBagTypes::SUCCESS, 'Symbol updated successfully');
 
             return $this->redirectToRoute('admin_symbol_list');
         }
@@ -100,6 +104,7 @@ class SymbolController extends AbstractController
         ]);
         $entityManager->remove($userSymbol);
         $entityManager->flush();
+        $this->addFlash(FlashBagTypes::INFO, 'Symbol deleted successfully');
 
         return $this->redirectToRoute('admin_symbol_list');
     }

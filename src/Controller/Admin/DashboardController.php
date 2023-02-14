@@ -8,7 +8,9 @@ use App\Entity\Order;
 use App\Entity\Symbol;
 use App\Entity\User;
 use App\Form\Admin\DateIntervalType;
+use App\Form\Admin\UserSettingType;
 use App\Model\Admin\DateIntervalModel;
+use App\Model\FlashBagTypes;
 use App\Repository\OrderRepository;
 use App\Repository\PriceRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -69,6 +71,25 @@ class DashboardController extends AbstractController
 
         return $this->render('admin/dashboard/cron_report.html.twig', [
             'data' => $data,
+        ]);
+    }
+
+    #[Route(path: '/admin/dashboard/settings', name: 'admin_dashboard_settings')]
+    public function settings(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $form = $this->createForm(UserSettingType::class, $user->getUserSetting());
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->flush();
+            $this->addFlash(FlashBagTypes::SUCCESS, 'Settings saved successfully');
+
+            return $this->redirectToRoute('admin_dashboard_prices');
+        }
+
+        return $this->render('admin/dashboard/settings.html.twig', [
+            'form' => $form->createView(),
         ]);
     }
 }

@@ -49,6 +49,7 @@ class SymbolRepository extends ServiceEntityRepository
         $qb = $this->createQueryBuilder('symbol', 'symbol.name')
             ->leftJoin('symbol.orders', 'orders')
             ->leftJoin('symbol.userSymbols', 'userSymbols')
+            ->innerJoin('userSymbols.user', 'user')
             ->andWhere('userSymbols.active = true OR orders.status = :status')
             ->setParameter('status', Order::STATUS_BUY)
         ;

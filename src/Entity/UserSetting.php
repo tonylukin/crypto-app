@@ -10,6 +10,7 @@ class UserSetting
 {
     private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 48; // 24 hours
     private const MIN_FALLEN_PRICE_PERCENTAGE = 7; // разница между максимальным значением за последнее время и текущим при достижении дна
+    private const FALLEN_PRICE_INTERVAL_HOURS = 48; // период для отчета максимального значения цены при падении, "последнее время" для константы выше
     private const MINIMAL_PROFIT_PERCENT = 2;
     private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
     private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;
@@ -52,6 +53,9 @@ class UserSetting
 
     #[ORM\Column(nullable: true)]
     private ?float $minPriceDiffPercentAfterLastSell = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $fallenPriceIntervalHours = null;
 
     public function getId(): ?int
     {
@@ -174,6 +178,18 @@ class UserSetting
     public function setMinPriceDiffPercentAfterLastSell(?float $minPriceDiffPercentAfterLastSell): self
     {
         $this->minPriceDiffPercentAfterLastSell = $minPriceDiffPercentAfterLastSell;
+
+        return $this;
+    }
+
+    public function getFallenPriceIntervalHours(): int
+    {
+        return $this->fallenPriceIntervalHours ?? self::FALLEN_PRICE_INTERVAL_HOURS;
+    }
+
+    public function setFallenPriceIntervalHours(?int $fallenPriceIntervalHours): self
+    {
+        $this->fallenPriceIntervalHours = $fallenPriceIntervalHours;
 
         return $this;
     }

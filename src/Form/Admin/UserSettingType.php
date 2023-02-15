@@ -26,6 +26,7 @@ class UserSettingType extends AbstractType
             ->add('legalMovingStepPercent', NumberType::class)
             ->add('hoursExtremelyShortIntervalForPrices', IntegerType::class)
             ->add('minPriceDiffPercentAfterLastSell', NumberType::class)
+            ->add('fallenPriceIntervalHours', IntegerType::class)
         ;
     }
 

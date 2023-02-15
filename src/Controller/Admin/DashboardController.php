@@ -84,8 +84,6 @@ class DashboardController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
             $this->addFlash(FlashBagTypes::SUCCESS, 'Settings saved successfully');
-
-            return $this->redirectToRoute('admin_dashboard_prices');
         }
 
         return $this->render('admin/dashboard/settings.html.twig', [

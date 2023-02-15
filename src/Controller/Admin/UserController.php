@@ -61,8 +61,6 @@ class UserController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
             $this->addFlash(FlashBagTypes::SUCCESS, 'User updated successfully');
-
-            return $this->redirectToRoute('admin_user_list');
         }
 
         return $this->render('admin/user/edit.html.twig', [

@@ -102,7 +102,7 @@ class BestPriceAnalyzer
                 // если падение от цены недостаточное по отношению к максимальной цене за последнее время, то прерываем
                 $highDiff = $this->priceRepository->getLastHighPrice(
                     $userSymbol->getSymbol(),
-                    new \DateInterval('PT48H'),
+                    new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getFallenPriceIntervalHours())),
                 ) - $price;
                 if ($direction === self::DIRECTION_PRICE_FALLING_DOWN && $highDiff / $price * 100 < $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent()) {
                     return false;

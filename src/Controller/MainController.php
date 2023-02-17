@@ -18,8 +18,6 @@ class MainController extends AbstractController
     #[Route('/', name: 'homepage')]
     public function index(): JsonResponse
     {
-        $data = $this->api->aggTrades('APEBUSD');
-        $data = $this->api->price('APEBUSD');
-        return $this->json($data);
+        return $this->json([]);
     }
 }

@@ -45,7 +45,8 @@
             {% for order in orders %}
                 {% set currentTotal = order.price * order.quantity %}
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
-                <tr class="{{ order.sold ? 'table-success' : 'table-danger' }}">
+                {% set currentDaysInterval = date(order.createdAt).diff(date(order.sellDate)).days + 1 %}
+                <tr class="{{ order.sold ? 'table-success' : (currentDaysInterval <= 7 ? 'table-warning' : 'table-danger') }}">
                     <td>{{ order.id }}</td>
                     <td>{{ order.symbol.name }} [{{ order.symbol.id }}]</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
@@ -69,11 +70,11 @@
                 {% set totalProfit = totalProfit + order.profit %}
                 {% set totalPercent = totalPercent + percent %}
                 {% set completedCount = completedCount + (order.sellPrice ? 1 : 0) %}
-                {% set daysInterval = daysInterval + (order.sellDate ? date(order.createdAt).diff(date(order.sellDate)).days : 0) %}
+                {% set daysInterval = daysInterval + (order.sellDate ? currentDaysInterval : 0) %}
             {% endfor %}
             <tr>
                 <td colspan="6" style="text-align: right">Total:</td>
-                <td>{{ totalProfit ? (daysInterval / total * 100)|round(2) : 0 }} days avg</td>
+                <td>{{ totalProfit ? (daysInterval / completedCount)|round(2) : 0 }} days avg</td>
                 <td>{{ totalProfit ? (totalProfit / total * 100)|round(2) : 0 }}</td>
                 <td>{{ totalProfit }}</td>
                 <td>{{ totalProfit ? (totalPercent / completedCount)|round(2) : 0 }}</td>
@@ -92,6 +93,7 @@
                     <th>Symbol</th>
                     <th>Count</th>
                     <th>Sum</th>
+                    <th>Avg Days</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -100,6 +102,7 @@
                         <td>{{ count.name }}</td>
                         <td>{{ count.count }}</td>
                         <td>{{ count.sum }}</td>
+                        <td>{{ count.avgDays }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>

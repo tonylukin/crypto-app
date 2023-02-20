@@ -141,7 +141,7 @@ class OrderRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->getDateIntervalQueryBuilder($user, $dateStart, $dateEnd, $onlyCompleted);
         $qb
-            ->select('COUNT(o.id) as count, SUM(o.profit) as sum, symbol.name')
+            ->select('COUNT(o.id) as count, SUM(o.profit) as sum, AVG(DATEDIFF(o.sellDate, o.createdAt) + 1) as avgDays, symbol.name')
             ->innerJoin('o.symbol', 'symbol')
         ;
         if ($onlyCompleted) {
@@ -150,7 +150,7 @@ class OrderRepository extends ServiceEntityRepository
                 ->setParameter('status', Order::STATUS_SELL)
             ;
         }
-        $qb->groupBy('o.symbol');
+        $qb->groupBy('o.symbol')->orderBy('sum', 'DESC');
 
         return $qb->getQuery()->getArrayResult();
     }
@@ -168,7 +168,7 @@ class OrderRepository extends ServiceEntityRepository
         if ($dateStart !== null) {
             $dateFrom = new \DateTimeImmutable($dateStart);
         } else {
-            $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
+            $dateFrom = new \DateTimeImmutable('first day of this month');
         }
         $qb
             ->andWhere('IF(o.sellDate IS NULL, o.createdAt, o.sellDate) >= :dateStart')

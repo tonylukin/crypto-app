@@ -9,7 +9,9 @@ use App\Service\ExchangeCredentialsInterface;
 use Lin\Huobi\HuobiSpot;
 use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 
-// todo see https://huobiapi.github.io/docs/spot/v1/en/#trading
+/**
+ * @link https://huobiapi.github.io/docs/spot/v1/en/#trading
+ */
 class API extends HuobiSpot implements ApiInterface
 {
     private const FEE_PERCENT = 0.5;

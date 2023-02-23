@@ -30,6 +30,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
         $symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $symbolRepository->getActiveList();
         $this->user = new User();
+        $this->user->getUserSetting()->setMinPricesCountMustHaveBeforeOrder(6);
     }
 
     /**
@@ -56,13 +57,12 @@ class BestPriceAnalyzerTest extends KernelTestCase
 
     public function priceForOrderProvider(): \Generator
     {
-        // avg price = 37.29, last price = 37.13
-        yield [31.95, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is falling down
-        yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is a plato but after rising
+        yield [28.49, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, true]; // price is match because is falling down
+        yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is on a top
         yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is rising up after falling
         yield [1596.09, PriceFixture::NOT_RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is not changed direction
-        yield [1552.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, true]; // price is match because is changed direction
         yield [1599.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is changed direction but step it too big
+        yield [1.7, PriceFixture::TWT_RISING_ON_INTERVAL_AND_THEN_FALLING_ON_DISTANCE_SYMBOL, false]; // цена растет после падения, НО это происходит на хаях относительно предыдущего движения. НЕ БЕРЕМ
     }
 
     /**
@@ -90,15 +90,14 @@ class BestPriceAnalyzerTest extends KernelTestCase
     public function priceForSaleProvider(): \Generator
     {
         // avg price = 37.29, last price = 37.13
-        yield [21.95, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // Плохой тест, идет цена и вдруг падает вниз, это не разворот. price is match because have recently changed direction
-        yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // price is match because is a plato
-        yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // price is match because we have changing direction
+        yield [37.36, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // берем, цена на пике упала
+        yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // не берем, цена растет
         // avg price = , last price = 28.49
         yield [35, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, false]; // price is not match because is still rising up
         yield [29.5, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, false]; // price is not match because is rising up
         // avg price = , last price = 1082.77
-        yield [1080, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true];
-        yield [1090, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true];
+        yield [1080, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true]; // falling down -> sell
+        yield [1090, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, false]; // rising up -> not sell
         yield [0.370, PriceFixture::RECENTLY_CHANGED_PRICE_WITH_PLATO_SYMBOL, true]; // price is match because is changed direction with a plato (real case)
     }
 }

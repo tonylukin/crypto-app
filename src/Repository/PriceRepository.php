@@ -120,4 +120,17 @@ class PriceRepository extends ServiceEntityRepository
 
         return $qb->getQuery()->getSingleScalarResult();
     }
+
+    public function getLastMinPrice(Symbol $symbol, \DateInterval $dateInterval): ?float
+    {
+        $qb = $this->createQueryBuilder('price')
+            ->select('MIN(price.price) AS highPrice')
+            ->where('price.datetime >= :dateTime')
+            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->andWhere('price.symbol = :symbol')
+            ->setParameter('symbol', $symbol)
+        ;
+
+        return $qb->getQuery()->getSingleScalarResult();
+    }
 }

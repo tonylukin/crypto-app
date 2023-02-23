@@ -6,6 +6,8 @@ namespace App\Command;
 
 use App\Entity\Symbol;
 use App\Repository\SymbolRepository;
+use App\Service\ApiFactory;
+use App\Service\ApiInterface;
 use App\Service\OrderManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -22,6 +24,7 @@ class TradeCommand extends Command
     public function __construct(
         private OrderManager $orderManager,
         private SymbolRepository $symbolRepository,
+        private ApiFactory $apiFactory,
     ) {
         parent::__construct();
     }
@@ -51,8 +54,15 @@ class TradeCommand extends Command
             $symbols = $this->symbolRepository->getActiveList();
         }
 
+        /** @var ApiInterface[] $apiCache */
+        $apiCache = [];
         foreach ($symbols as $symbol) {
             foreach ($symbol->getUserSymbols() as $userSymbol) {
+                $exchangeId = $userSymbol->getUser()->getUserSetting()->getUseExchange();
+                if (!\array_key_exists($exchangeId, $apiCache)) {
+                    $apiCache[$exchangeId] = $this->apiFactory->build($exchangeId);
+                }
+                $this->orderManager->setApi($apiCache[$exchangeId]);
                 if (!$userSymbol->getUser()->getUserSetting()->isDisableTrading()) {
                     $this->io->write("Start trading for {$symbol->getName()} of user {$userSymbol->getUser()->getUserIdentifier()}");
                     $this->orderManager->buy($userSymbol->getUser(), $userSymbol, $userSymbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);

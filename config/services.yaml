@@ -26,7 +26,7 @@ services:
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
     App\Service\Binance\API:
-        $apiKey: '%env(BINANCE_API_KEY)%'
-        $apiSecret: '%env(BINANCE_API_SECRET)%'
+#        $apiKey: '%env(BINANCE_API_KEY)%'
+#        $apiSecret: '%env(BINANCE_API_SECRET)%'
 
     App\Service\ApiInterface: '@App\Service\Binance\API'

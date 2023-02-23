@@ -23,22 +23,32 @@ class API extends HuobiSpot implements ApiInterface
 
     public function price(string $symbol): float
     {
-        // todo implement
+        $symbol = strtolower($symbol);
+        $result = $this->market()->getTrade([
+            'symbol' => $symbol,
+        ]);
+
+        return $result['tick']['data'][0]['price'] ?? throw new \Exception('Can not get price');
     }
 
+    /**
+     * @return array{status: string, data: int}
+     */
     public function buyLimit(string $symbol, float $quantity, float $price): array
     {
         if ($this->environmentId !== 'prod') {
             return [];
         }
 
-        $this->order()->postPlace([
+        $result = $this->order()->postPlace([
             'account-id' => $this->getAccountId(),
             'symbol' => strtolower($symbol),
             'type' => 'buy-limit',
             'amount' => $quantity,
             'price' => $price,
         ]);
+
+        return $result;
     }
 
     public function sellLimit(string $symbol, float $quantity, float $price): array
@@ -47,13 +57,15 @@ class API extends HuobiSpot implements ApiInterface
             return [];
         }
 
-        $this->order()->postPlace([
+        $result = $this->order()->postPlace([
             'account-id' => $this->getAccountId(),
             'symbol' => strtolower($symbol),
             'type' => 'sell-limit',
             'amount' => $quantity,
             'price' => $price,
         ]);
+
+        return $result;
     }
 
     public function getFeeMultiplier(): float
@@ -71,9 +83,10 @@ class API extends HuobiSpot implements ApiInterface
         return $this;
     }
 
-    // todo implement it: https://api.huobi.com/v1/account/accounts
-    private function getAccountId(): string
+    private function getAccountId(): int
     {
-        return '';
+        $result = $this->account()->get();
+
+        return $result['data'][0]['id'] ?? throw new \Exception('Can not get account id');
     }
 }

@@ -13,14 +13,22 @@ use Psr\Log\LoggerInterface;
 
 class OrderManager
 {
+    private ApiInterface $api;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private OrderRepository $orderRepository,
         private BestPriceAnalyzer $bestPriceAnalyzer,
-        private ApiInterface $api,
         private LoggerInterface $logger
     )
     {}
+
+    public function setApi(ApiInterface $api): self
+    {
+        $this->api = $api;
+
+        return $this;
+    }
 
     public function buy(User $user, UserSymbol $userSymbol, float $totalPrice): bool
     {

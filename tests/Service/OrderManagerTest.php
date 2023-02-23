@@ -11,6 +11,7 @@ use App\Entity\UserSymbol;
 use App\Repository\OrderRepository;
 use App\Repository\SymbolRepository;
 use App\Repository\UserRepository;
+use App\Service\ApiFactory;
 use App\Service\BestPriceAnalyzer;
 use App\Service\OrderManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -20,13 +21,17 @@ class OrderManagerTest extends KernelTestCase
 {
     private BestPriceAnalyzer|null $bestPriceAnalyzer;
     private null|OrderManager $orderManager;
-    private User $user;
     /**
      * @var \App\Entity\Symbol[]
      */
     private array $symbols;
+    /**
+     * @var User[]
+     */
+    private array $users;
     private null|\Doctrine\ORM\EntityManager $em;
     private OrderRepository $orderRepositoryMock;
+    private ApiFactory $apiFactory;
 
     protected function setUp(): void
     {
@@ -38,9 +43,10 @@ class OrderManagerTest extends KernelTestCase
         $container->set(BestPriceAnalyzer::class, $this->bestPriceAnalyzer);
         $this->orderManager = $container->get(OrderManager::class);
         $userRepository = $container->get(UserRepository::class);
-        $this->user = $userRepository->findOneBy([]);
+        $this->users = $userRepository->findAll();
         $symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $symbolRepository->getActiveList();
+        $this->apiFactory = $container->get(ApiFactory::class);
 
         $this->em = $container->get(EntityManagerInterface::class);
         $this->em->getConnection()->beginTransaction();
@@ -59,12 +65,17 @@ class OrderManagerTest extends KernelTestCase
             ->method('getBestPriceForOrder')
             ->willReturn(22.22)
         ;
-        $userSymbol = (new UserSymbol())
-            ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
-            ->setUser($this->user)
-        ;
-        $result = $this->orderManager->buy($this->user, $userSymbol, 5);
-        self::assertTrue($result);
+        foreach ($this->users as $user) {
+            $userSymbol = (new UserSymbol())
+                ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+                ->setUser($user)
+            ;
+            $this->orderManager->setApi(
+                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange())
+            );
+            $result = $this->orderManager->buy($user, $userSymbol, 5);
+            self::assertTrue($result);
+        }
     }
 
     public function testSell(): void
@@ -84,11 +95,16 @@ class OrderManagerTest extends KernelTestCase
             ->method('getPriceProfit')
             ->willReturn(1.5)
         ;
-        $userSymbol = (new UserSymbol())
-            ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
-            ->setUser($this->user)
-        ;
-        $result = $this->orderManager->sell($this->user, $userSymbol);
-        self::assertTrue($result);
+        foreach ($this->users as $user) {
+            $userSymbol = (new UserSymbol())
+                ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+                ->setUser($user)
+            ;
+            $this->orderManager->setApi(
+                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange())
+            );
+            $result = $this->orderManager->sell($user, $userSymbol);
+            self::assertTrue($result);
+        }
     }
 }

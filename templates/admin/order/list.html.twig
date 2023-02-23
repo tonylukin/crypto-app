@@ -98,7 +98,7 @@
                 </thead>
                 <tbody>
                 {% for count in counts %}
-                    <tr>
+                    <tr class="{{ count.avgDays > 7 ? 'table-danger' : '' }}">
                         <td>{{ count.name }}</td>
                         <td>{{ count.count }}</td>
                         <td>{{ count.sum }}</td>

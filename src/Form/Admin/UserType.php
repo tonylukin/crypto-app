@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace App\Form\Admin;
 
 use App\Entity\User;
-use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
@@ -22,9 +20,7 @@ class UserType extends AbstractType
 {
     public function __construct(
         private UserPasswordHasherInterface $userPasswordHasher,
-        private Encryptor $encryptor,
-    ) {
-    }
+    ) {}
 
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
@@ -39,12 +35,6 @@ class UserType extends AbstractType
             'multiple' => true,
             'required' => false,
         ]);
-        $builder->add('binanceApiKey', TextType::class, [
-            'required' => false,
-        ]);
-        $builder->add('binanceApiSecret', TextareaType::class, [
-            'required' => false,
-        ]);
         $builder->add('plainPassword', RepeatedType::class, [
             'type' => PasswordType::class,
             'first_options'  => ['label' => 'Password', 'hash_property_path' => 'password'],
@@ -54,7 +44,6 @@ class UserType extends AbstractType
             'disabled' => $user->getId() !== null, // todo fix empty password hashing and changing on entity
         ]);
 
-        $builder->addEventListener(FormEvents::POST_SET_DATA, [$this, 'postSetData']);
         $builder->addEventListener(FormEvents::SUBMIT, [$this, 'onSubmit']);
     }
 
@@ -75,15 +64,6 @@ class UserType extends AbstractType
         ]);
     }
 
-    public function postSetData(FormEvent $event): void
-    {
-        /** @var User $user */
-        $user = $event->getData();
-        if ($user->getBinanceApiSecret() !== null) {
-            $event->getForm()->get('binanceApiSecret')->setData($this->encryptor->decrypt($user->getBinanceApiSecret()));
-        }
-    }
-
     public function onSubmit(FormEvent $event): void
     {
         /** @var User $user */
@@ -91,10 +71,6 @@ class UserType extends AbstractType
         $password = $event->getForm()->get('plainPassword')->getData();
         if ($password) {
             $user->setPassword($this->userPasswordHasher->hashPassword($user, $password));
-        }
-        $binanceApiSecret = $event->getForm()->get('binanceApiSecret')->getData();
-        if ($binanceApiSecret) {
-            $user->setBinanceApiSecret($this->encryptor->encrypt($binanceApiSecret));
         }
         $user->setRoles($event->getForm()->get('roles')->getData());
     }

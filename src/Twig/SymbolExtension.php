@@ -23,6 +23,6 @@ class SymbolExtension extends AbstractExtension
 
     public function getSymbols(?User $user = null): array
     {
-        return $this->symbolRepository->getActiveList($user);
+        return $this->symbolRepository->getActiveList($user, true);
     }
 }

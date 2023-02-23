@@ -13,12 +13,10 @@ class API extends \Binance\API implements ApiInterface
     private const FEE_PERCENT = 0.5;
 
     public function __construct(
-        string $apiKey,
-        string $apiSecret,
         private string $environmentId,
         private Encryptor $encryptor,
     ) {
-        parent::__construct($apiKey, $apiSecret);
+        parent::__construct('', '');
         $this->caOverride = true;
     }
 

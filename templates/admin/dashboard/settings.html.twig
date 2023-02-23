@@ -8,6 +8,7 @@
 
     {{ form_start(form) }}
 
+    {{ form_row(form.useExchange) }}
     {{ form_row(form.disableTrading) }}
     {{ form_row(form.minFallenPricePercent) }}
     {{ form_row(form.minProfitPercent) }}
@@ -18,10 +19,14 @@
     {{ form_row(form.hoursExtremelyShortIntervalForPrices) }}
     {{ form_row(form.minPriceDiffPercentAfterLastSell) }}
     {{ form_row(form.fallenPriceIntervalHours) }}
+    {{ form_row(form.binanceApiKey) }}
+    {{ form_row(form.binanceApiSecret) }}
+    {{ form_row(form.huobiApiKey) }}
+    {{ form_row(form.huobiApiSecret) }}
 
     <div class="mt-3">
         <button class="btn btn-primary" type="submit">Save</button>
-        <a class="btn btn-danger" href="{{ path('admin_dashboard_prices') }}">Cancel</a>
+        <a class="btn btn-danger" href="{{ path('admin_order_list') }}">Cancel</a>
     </div>
 
     {{ form_end(form) }}

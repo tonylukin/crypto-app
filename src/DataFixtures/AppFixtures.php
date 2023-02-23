@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use App\Entity\Order;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,8 +26,17 @@ class AppFixtures extends Fixture
             ->setRoles([User::ROLE_ADMIN])
         ;
         $user->setPassword($this->userPasswordHasher->hashPassword($user, '28051989'));
-        $user->setBinanceApiKey('123');
-        $user->setBinanceApiSecret($this->encryptor->encrypt('123456'));
+        $user->getUserSetting()->setBinanceApiKey('123');
+        $user->getUserSetting()->setBinanceApiSecret($this->encryptor->encrypt('123456'));
+        $manager->persist($user);
+
+        $user = (new User())
+            ->setUsername('user')
+        ;
+        $user->setPassword($this->userPasswordHasher->hashPassword($user, '28051989'));
+        $user->getUserSetting()->setUseExchange(Order::EXCHANGE_HUOBI);
+        $user->getUserSetting()->setHuobiApiKey('123');
+        $user->getUserSetting()->setHuobiApiSecret($this->encryptor->encrypt('123456'));
         $manager->persist($user);
 
         $manager->flush();

@@ -21,7 +21,7 @@ class PriceSaver
     public function savePrices(): array
     {
         $dateTime = new \DateTimeImmutable();
-        $symbols = $this->symbolRepository->getActiveList();
+        $symbols = $this->symbolRepository->getActiveList(includeNonActive: true);
         $logs = [];
         $this->errors = [];
         foreach ($symbols as $symbol) {

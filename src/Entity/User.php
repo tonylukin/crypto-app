@@ -41,12 +41,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Exchang
     #[ORM\OneToMany(targetEntity: Order::class, mappedBy: "user")]
     private Collection $orders;
 
-    #[ORM\Column(length: 64, nullable: true)]
-    private ?string $binanceApiKey = null;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $binanceApiSecret = null;
-
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'], fetch: 'EAGER')]
     private ?UserSetting $userSetting = null;
 
@@ -149,36 +143,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Exchang
 
     public function getBinanceApiKey(): ?string
     {
-        return $this->binanceApiKey;
-    }
-
-    public function setBinanceApiKey(?string $binanceApiKey): self
-    {
-        $this->binanceApiKey = $binanceApiKey;
-
-        return $this;
+        return $this->userSetting->getBinanceApiKey();
     }
 
     public function getBinanceApiSecret(): ?string
     {
-        return $this->binanceApiSecret;
-    }
-
-    public function setBinanceApiSecret(?string $binanceApiSecret): self
-    {
-        $this->binanceApiSecret = $binanceApiSecret;
-
-        return $this;
+        return $this->userSetting->getBinanceApiSecret();
     }
 
     public function getHuobiApiKey(): ?string
     {
-        return null;
+        return $this->userSetting->getHuobiApiKey();
     }
 
     public function getHuobiApiSecret(): ?string
     {
-        return null;
+        return $this->userSetting->getHuobiApiSecret();
     }
 
     public function getUserSetting(): UserSetting

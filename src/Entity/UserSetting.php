@@ -30,6 +30,9 @@ class UserSetting
     #[ORM\Column(options: ['default' => false])]
     private bool $disableTrading = false;
 
+    #[ORM\Column(nullable: false, options: ['default' => Order::EXCHANGE_BINANCE], type: 'smallint')]
+    private int $useExchange = Order::EXCHANGE_BINANCE;
+
     #[ORM\Column(nullable: true)]
     private ?float $minFallenPricePercent = null;
 
@@ -57,6 +60,18 @@ class UserSetting
     #[ORM\Column(nullable: true)]
     private ?int $fallenPriceIntervalHours = null;
 
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $binanceApiKey = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $binanceApiSecret = null;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $huobiApiKey = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $huobiApiSecret = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -71,6 +86,17 @@ class UserSetting
     {
         $this->user = $user;
 
+        return $this;
+    }
+
+    public function getUseExchange(): int
+    {
+        return $this->useExchange;
+    }
+
+    public function setUseExchange(int $useExchange): UserSetting
+    {
+        $this->useExchange = $useExchange;
         return $this;
     }
 
@@ -190,6 +216,54 @@ class UserSetting
     public function setFallenPriceIntervalHours(?int $fallenPriceIntervalHours): self
     {
         $this->fallenPriceIntervalHours = $fallenPriceIntervalHours;
+
+        return $this;
+    }
+
+    public function getBinanceApiKey(): ?string
+    {
+        return $this->binanceApiKey;
+    }
+
+    public function setBinanceApiKey(?string $binanceApiKey): UserSetting
+    {
+        $this->binanceApiKey = $binanceApiKey;
+
+        return $this;
+    }
+
+    public function getBinanceApiSecret(): ?string
+    {
+        return $this->binanceApiSecret;
+    }
+
+    public function setBinanceApiSecret(?string $binanceApiSecret): UserSetting
+    {
+        $this->binanceApiSecret = $binanceApiSecret;
+
+        return $this;
+    }
+
+    public function getHuobiApiKey(): ?string
+    {
+        return $this->huobiApiKey;
+    }
+
+    public function setHuobiApiKey(?string $huobiApiKey): UserSetting
+    {
+        $this->huobiApiKey = $huobiApiKey;
+
+        return $this;
+    }
+
+    public function getHuobiApiSecret(): ?string
+    {
+        return $this->huobiApiSecret;
+    }
+
+    public function setHuobiApiSecret(?string $huobiApiSecret): UserSetting
+    {
+        $this->huobiApiSecret = $huobiApiSecret;
 
         return $this;
     }

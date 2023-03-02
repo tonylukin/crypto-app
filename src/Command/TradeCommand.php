@@ -65,9 +65,9 @@ class TradeCommand extends Command
                 $this->orderManager->setApi($apiCache[$exchangeId]);
                 if (!$userSymbol->getUser()->getUserSetting()->isDisableTrading()) {
                     $this->io->write("Start trading for {$symbol->getName()} of user {$userSymbol->getUser()->getUserIdentifier()}");
-                    $this->orderManager->buy($userSymbol->getUser(), $userSymbol, $userSymbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);
+                    $this->orderManager->buy($userSymbol, $userSymbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);
                 }
-                $this->orderManager->sell($userSymbol->getUser(), $userSymbol);
+                $this->orderManager->sell($userSymbol);
             }
         }
 

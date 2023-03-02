@@ -30,8 +30,9 @@ class OrderManager
         return $this;
     }
 
-    public function buy(User $user, UserSymbol $userSymbol, float $totalPrice): bool
+    public function buy(UserSymbol $userSymbol, float $totalPrice): bool
     {
+        $user = $userSymbol->getUser();
         $pendingOrder = $this
             ->orderRepository
             ->findPendingOrder($user, $userSymbol->getSymbol())
@@ -49,7 +50,6 @@ class OrderManager
         $order = $this->orderRepository->getLastFinishedOrder($user, $userSymbol->getSymbol());
         if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()
             && ($order->getSellPrice() - $price) / $price * 100 < $user->getUserSetting()->getMinPriceDiffPercentAfterLastSell()) {
-//            $this->logger->warning("Not enough time and price difference from the last order for symbol {$symbol->getName()}");
             return false;
         }
 
@@ -67,7 +67,7 @@ class OrderManager
                 ->setPrice($price)
                 ->setQuantity($quantity)
                 ->setBuyReason($this->bestPriceAnalyzer->getReason())
-                ->setUser($userSymbol->getUser())
+                ->setUser($user)
             ;
             $this->entityManager->persist($order);
             $this->entityManager->flush();
@@ -75,7 +75,7 @@ class OrderManager
             $this->api->setCredentials($user);
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $price);
             $this->logger->warning('Buy response', [
-                'user' => $userSymbol->getUser()->getUserIdentifier(),
+                'user' => $user->getUserIdentifier(),
                 'response' => $response,
                 'quantity' => $quantity,
                 'price' => $price
@@ -85,6 +85,7 @@ class OrderManager
         } catch (\Throwable $e) {
             $this->entityManager->rollback();
             $this->logger->error($e->getMessage(), [
+                'user' => $user->getUserIdentifier(),
                 'symbol' => $userSymbol->getSymbol()->getName(),
                 'totalPrice' => $quantity * $price,
                 'method' => __METHOD__
@@ -96,8 +97,9 @@ class OrderManager
         return true;
     }
 
-    public function sell(User $user, UserSymbol $userSymbol): bool
+    public function sell(UserSymbol $userSymbol): bool
     {
+        $user = $userSymbol->getUser();
         $pendingOrder = $this
             ->orderRepository
             ->findPendingOrder($user, $userSymbol->getSymbol())
@@ -113,7 +115,6 @@ class OrderManager
 
         $profit = $this->bestPriceAnalyzer->getPriceProfit($pendingOrder, $price);
         if ($profit === null) {
-//            $this->logger->info("Profit is too low, price: {$price} {$userSymbol->getSymbol()->getName()}", ['method' => __METHOD__]);
             return false;
         }
 
@@ -131,7 +132,7 @@ class OrderManager
             $this->api->setCredentials($user);
             $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
             $this->logger->warning('Sell response', [
-                'user' => $userSymbol->getUser()->getUserIdentifier(),
+                'user' => $user->getUserIdentifier(),
                 'response' => $response,
                 'quantity' => $pendingOrder->getQuantity(),
                 'price' => $price
@@ -141,6 +142,7 @@ class OrderManager
         } catch (\Throwable $e) {
             $this->entityManager->rollback();
             $this->logger->error($e->getMessage(), [
+                'user' => $user->getUserIdentifier(),
                 'symbol' => $userSymbol->getSymbol()->getName(),
                 'totalPrice' => $pendingOrder->getQuantity() * $price,
                 'method' => __METHOD__

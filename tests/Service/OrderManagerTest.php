@@ -73,7 +73,7 @@ class OrderManagerTest extends KernelTestCase
             $this->orderManager->setApi(
                 $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange())
             );
-            $result = $this->orderManager->buy($user, $userSymbol, 5);
+            $result = $this->orderManager->buy($userSymbol, 5);
             self::assertTrue($result);
         }
     }
@@ -103,7 +103,7 @@ class OrderManagerTest extends KernelTestCase
             $this->orderManager->setApi(
                 $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange())
             );
-            $result = $this->orderManager->sell($user, $userSymbol);
+            $result = $this->orderManager->sell($userSymbol);
             self::assertTrue($result);
         }
     }

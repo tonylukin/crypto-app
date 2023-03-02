@@ -13,6 +13,7 @@ use Psr\Log\LoggerInterface;
 class BestPriceAnalyzer
 {
     private const PERCENT_VALUE_FOR_MIN_PRICE_ON_DISTANCE = 12;
+    private const MIN_PERCENT_PRICE_DIFFERENCE_FOR_CHANGING_DIRECTION = 0.1;
 
     private const DIRECTION_PRICE_RISING_UP = 1;
     private const DIRECTION_PRICE_FALLING_DOWN = -1;
@@ -134,6 +135,11 @@ class BestPriceAnalyzer
             if ($direction === self::DIRECTION_PRICE_FALLING_DOWN
                 && (abs($lastPrice - $price) / $price) * 100 > $userSymbol->getUser()->getUserSetting()->getLegalMovingStepPercent()
             ) {
+                return false;
+            }
+
+            // не нужно считать изменением направления небольшой рост цены
+            if ((abs($lastPrice - $price) / $price) * 100 < self::MIN_PERCENT_PRICE_DIFFERENCE_FOR_CHANGING_DIRECTION) {
                 return false;
             }
         }

@@ -46,7 +46,7 @@ class AuthController extends AbstractController
         UserAuthenticatorInterface $authenticator,
         LoginFormAuthenticator $formAuthenticator,
     ): Response {
-        throw new AccessDeniedException(); // todo remove when frontend is ready
+        throw new AccessDeniedException();
 
         if ($this->getUser() !== null) {
             throw new AccessDeniedException();

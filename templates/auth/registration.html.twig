@@ -1,0 +1,18 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Registration{% endblock %}
+
+{% block body %}
+    <h1 class="h3 mb-3 font-weight-normal">Registration form</h1>
+
+    {{ form_start(form) }}
+
+    {{ form_row(form.username) }}
+    {{ form_row(form.plainPassword) }}
+
+    <div class="mt-3">
+        <button class="btn btn-primary" type="submit">Register</button>
+    </div>
+
+    {{ form_end(form) }}
+{% endblock %}

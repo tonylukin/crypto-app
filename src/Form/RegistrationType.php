@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Form\Admin;
+namespace App\Form;
 
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -16,7 +15,7 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
-class UserType extends AbstractType
+class RegistrationType extends AbstractType
 {
     public function __construct(
         private UserPasswordHasherInterface $userPasswordHasher,
@@ -28,13 +27,6 @@ class UserType extends AbstractType
         $user = $builder->getData();
 
         $builder->add('username', TextType::class);
-        $builder->add('roles', ChoiceType::class, [
-            'choices' => array_combine([
-                'admin',
-            ], User::ROLES),
-            'multiple' => true,
-            'required' => false,
-        ]);
         $builder->add('plainPassword', RepeatedType::class, [
             'type' => PasswordType::class,
             'first_options'  => ['label' => 'Password'],
@@ -68,6 +60,5 @@ class UserType extends AbstractType
         if ($password) {
             $user->setPassword($this->userPasswordHasher->hashPassword($user, $password));
         }
-        $user->setRoles($event->getForm()->get('roles')->getData());
     }
 }

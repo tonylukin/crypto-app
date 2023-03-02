@@ -15,7 +15,7 @@ class MainController extends AbstractController
         private ApiInterface $api
     ) {}
 
-    #[Route('/', name: 'homepage')]
+    #[Route('/', name: 'app_main_index')]
     public function index(): JsonResponse
     {
         return $this->json([]);

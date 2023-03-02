@@ -52,8 +52,8 @@ class AppFixtures extends Fixture
             [
                 'name' => 'prices',
                 'command' => 'app:import-prices',
-//                'schedule' => '8,18,28,38,48,58 * * * *',
-                'schedule' => '0,30 * * * *',
+                'schedule' => '8,18,28,38,48,58 * * * *',
+//                'schedule' => '0,30 * * * *',
                 'description' => 'Save prices from exchange',
                 'enabled' => 1,
             ],

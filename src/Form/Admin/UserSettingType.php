@@ -44,6 +44,7 @@ class UserSettingType extends AbstractType
             ->add('hoursExtremelyShortIntervalForPrices', IntegerType::class)
             ->add('minPriceDiffPercentAfterLastSell', NumberType::class)
             ->add('fallenPriceIntervalHours', IntegerType::class)
+            ->add('daysIntervalMinPriceOnDistance', IntegerType::class)
         ;
         $builder
             ->add('binanceApiKey', TextType::class, [

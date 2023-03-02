@@ -9,7 +9,6 @@ use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Form\Admin\SymbolType;
 use App\Model\FlashBagTypes;
-use App\Repository\SymbolRepository;
 use App\Repository\UserSymbolRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
@@ -62,8 +61,17 @@ class SymbolController extends AbstractController
     {
         $symbolIds = $request->get('symbolIds', []);
         $totalPrice = (float) $request->get('totalPrice');
-        $count = $userSymbolRepository->batchChangeTotalPrice($symbolIds, $this->getUser(), $totalPrice);
-        $this->addFlash(FlashBagTypes::SUCCESS, "{$count} symbols updated successfully");
+        $toggleActive = (int) $request->get('toggleActive');
+        $count = null;
+        if ($totalPrice > 0) {
+            $count = $userSymbolRepository->batchChangeTotalPrice($symbolIds, $this->getUser(), $totalPrice);
+        }
+        if ($toggleActive === 1) {
+            $count = $userSymbolRepository->batchToggleActive($symbolIds, $this->getUser());
+        }
+        if ($count !== null) {
+            $this->addFlash(FlashBagTypes::SUCCESS, "{$count} symbols updated successfully");
+        }
 
         return $this->redirectToRoute('admin_symbol_list');
     }

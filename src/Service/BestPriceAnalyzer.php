@@ -12,7 +12,6 @@ use Psr\Log\LoggerInterface;
 
 class BestPriceAnalyzer
 {
-    private const DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE = 4; // todo to settings
     private const PERCENT_VALUE_FOR_MIN_PRICE_ON_DISTANCE = 12;
 
     private const DIRECTION_PRICE_RISING_UP = 1;
@@ -118,7 +117,7 @@ class BestPriceAnalyzer
             if ($direction === self::DIRECTION_PRICE_FALLING_DOWN) {
                 $minDiff = $price - $this->priceRepository->getLastMinPrice(
                     $userSymbol->getSymbol(),
-                    new \DateInterval(sprintf('P%dD', self::DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE))
+                    new \DateInterval(sprintf('P%dD', $userSymbol->getUser()->getUserSetting()->getDaysIntervalMinPriceOnDistance()))
                 );
                 if ($minDiff / $price * 100 > self::PERCENT_VALUE_FOR_MIN_PRICE_ON_DISTANCE) {
                     return false;
@@ -213,11 +212,21 @@ class BestPriceAnalyzer
 
         $maxDaysWaitingForProfit = $pendingOrder->getUser()->getUserSetting()->getMaxDaysWaitingForProfit();
         if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', $maxDaysWaitingForProfit)) <= new \DateTimeImmutable()) {
-            $this->logger->warning("Was waiting too long for profit, sold after {$maxDaysWaitingForProfit} days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}");
+            $this->logger->warning("Was waiting too long for profit, sold after {$maxDaysWaitingForProfit} days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}", [
+                'user' => $pendingOrder->getUser()->getUserIdentifier(),
+            ]);
             return $profit;
         }
 
         $profitPercent = $profit / $expenses * 100;
+        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', ceil($maxDaysWaitingForProfit / 2))) <= new \DateTimeImmutable()
+            && $profitPercent >= $pendingOrder->getUser()->getUserSetting()->getMinProfitPercent() / 2) {
+            $this->logger->warning("Sold after a half of max interval: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}", [
+                'user' => $pendingOrder->getUser()->getUserIdentifier(),
+            ]);
+            return $profit;
+        }
+
         if ($profitPercent < $pendingOrder->getUser()->getUserSetting()->getMinProfitPercent()) {
             return null;
         }

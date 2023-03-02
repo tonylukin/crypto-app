@@ -88,6 +88,7 @@ class PriceRepository extends ServiceEntityRepository
         } else {
             $dateFrom = (new \DateTimeImmutable())->modify('-7 days');
         }
+        $dateFrom->setTime(0, 0);
         $qb
             ->andWhere('price.datetime >= :dateStart')
             ->setParameter('dateStart', $dateFrom)
@@ -95,7 +96,7 @@ class PriceRepository extends ServiceEntityRepository
         if ($dateEnd !== null) {
             $qb
                 ->andWhere('price.datetime <= :dateEnd')
-                ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
+                ->setParameter('dateEnd', (new \DateTimeImmutable($dateEnd))->setTime(23, 59))
             ;
         }
         if ($symbol !== null) {

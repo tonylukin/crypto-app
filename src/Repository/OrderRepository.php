@@ -170,6 +170,7 @@ class OrderRepository extends ServiceEntityRepository
         } else {
             $dateFrom = new \DateTimeImmutable('first day of this month');
         }
+        $dateFrom->setTime(0, 0);
         $qb
             ->andWhere('IF(o.sellDate IS NULL, o.createdAt, o.sellDate) >= :dateStart')
             ->setParameter('dateStart', $dateFrom)
@@ -179,7 +180,7 @@ class OrderRepository extends ServiceEntityRepository
         if ($dateEnd !== null) {
             $qb
                 ->andWhere('IF(o.sellDate IS NULL, o.createdAt, o.sellDate) <= :dateEnd')
-                ->setParameter('dateEnd', new \DateTimeImmutable($dateEnd))
+                ->setParameter('dateEnd', (new \DateTimeImmutable($dateEnd))->setTime(23, 59))
             ;
         }
 

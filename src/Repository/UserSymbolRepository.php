@@ -88,4 +88,22 @@ class UserSymbolRepository extends ServiceEntityRepository
             ->getSingleScalarResult()
         ;
     }
+
+    public function batchToggleActive(array $symbolIds, UserInterface $user): int
+    {
+        if (empty($symbolIds)) {
+            return 0;
+        }
+
+        return $this->createQueryBuilder('us')
+            ->update()
+            ->set('us.active', '1 - us.active')
+            ->where('us.user = :user')
+            ->setParameter('user', $user)
+            ->andWhere('IDENTITY(us.symbol) IN (:symbolIds)')
+            ->setParameter('symbolIds', $symbolIds)
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
 }

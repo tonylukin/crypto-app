@@ -74,7 +74,12 @@ class OrderManager
 
             $this->api->setCredentials($user);
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $price);
-            $this->logger->warning('Buy response', ['response' => $response, 'quantity' => $quantity, 'price' => $price]);
+            $this->logger->warning('Buy response', [
+                'user' => $userSymbol->getUser()->getUserIdentifier(),
+                'response' => $response,
+                'quantity' => $quantity,
+                'price' => $price
+            ]);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {
@@ -108,7 +113,7 @@ class OrderManager
 
         $profit = $this->bestPriceAnalyzer->getPriceProfit($pendingOrder, $price);
         if ($profit === null) {
-            $this->logger->info("Profit is too low, price: {$price} {$userSymbol->getSymbol()->getName()}", ['method' => __METHOD__]);
+//            $this->logger->info("Profit is too low, price: {$price} {$userSymbol->getSymbol()->getName()}", ['method' => __METHOD__]);
             return false;
         }
 
@@ -125,7 +130,12 @@ class OrderManager
 
             $this->api->setCredentials($user);
             $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
-            $this->logger->warning('Sell response', ['response' => $response, 'quantity' => $pendingOrder->getQuantity(), 'price' => $price]);
+            $this->logger->warning('Sell response', [
+                'user' => $userSymbol->getUser()->getUserIdentifier(),
+                'response' => $response,
+                'quantity' => $pendingOrder->getQuantity(),
+                'price' => $price
+            ]);
             $this->entityManager->commit();
 
         } catch (\Throwable $e) {

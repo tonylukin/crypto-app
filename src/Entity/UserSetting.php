@@ -15,8 +15,9 @@ class UserSetting
     private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
     private const MINIMAL_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;
     private const MAX_PERCENT_DIFF_ON_MOVING = 3;
-    private const LEGAL_MOVING_STEP_PERCENT = 5; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
+    private const LEGAL_MOVING_STEP_PERCENT = 4; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
     private const HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES = 4;
+    private const DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE = 4; // интервал в днях для проверки падения цены, которая происходит на коротком взлете ("ситуация в TWT")
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -59,6 +60,9 @@ class UserSetting
 
     #[ORM\Column(nullable: true)]
     private ?int $fallenPriceIntervalHours = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $daysIntervalMinPriceOnDistance = null;
 
     #[ORM\Column(length: 64, nullable: true)]
     private ?string $binanceApiKey = null;
@@ -216,6 +220,18 @@ class UserSetting
     public function setFallenPriceIntervalHours(?int $fallenPriceIntervalHours): self
     {
         $this->fallenPriceIntervalHours = $fallenPriceIntervalHours;
+
+        return $this;
+    }
+
+    public function getDaysIntervalMinPriceOnDistance(): ?int
+    {
+        return $this->daysIntervalMinPriceOnDistance ?? self::DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE;
+    }
+
+    public function setDaysIntervalMinPriceOnDistance(?int $daysIntervalMinPriceOnDistance): UserSetting
+    {
+        $this->daysIntervalMinPriceOnDistance = $daysIntervalMinPriceOnDistance;
 
         return $this;
     }

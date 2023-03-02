@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 class BestPriceAnalyzer
 {
     private const PERCENT_VALUE_FOR_MIN_PRICE_ON_DISTANCE = 12;
-    private const MIN_PERCENT_PRICE_DIFFERENCE_FOR_CHANGING_DIRECTION = 0.1;
+    private const MIN_PERCENT_PRICE_DIFFERENCE_FOR_CHANGING_DIRECTION = 0.15;
 
     private const DIRECTION_PRICE_RISING_UP = 1;
     private const DIRECTION_PRICE_FALLING_DOWN = -1;

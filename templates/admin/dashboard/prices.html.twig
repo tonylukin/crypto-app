@@ -30,10 +30,9 @@
     {{ form_end(form, {render_rest: false}) }}
 
     <canvas id="prices" width="400" height="400"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
-            integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@^2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
     <script>
       const prices = {{ prices|map(price => {x: price.datetime|date('U') * 1000, y: price.price})|json_encode|raw }};
       const config = {
@@ -96,13 +95,19 @@
                 displayFormats: {
                   // day: 'd.M'
                 },
+                tooltipFormat:'y-MM-dd HH:mm',
+              },
+              adapters: {
+                  date: {
+                      zone: 'UTC+0'
+                  }
               },
               ticks: {
                 source: 'auto',
                 // Disabled rotation for performance
                 maxRotation: 0,
                 autoSkip: true,
-              }
+              },
             }
           }
         }

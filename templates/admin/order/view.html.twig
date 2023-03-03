@@ -1,0 +1,55 @@
+{# @var \App\Entity\Order order #}
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}View order #{{ order.id }}{% endblock %}
+
+{% block body %}
+    <h2 class="mb-4">View order #{{ order.id }} {{ order.symbol.name }}</h2>
+    {% set total = order.price * order.quantity %}
+    {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
+
+    <table class="table table-bordered table-striped">
+        <tbody>
+        <tr>
+            <td>Buy reason</td>
+            <td>{{ order.buyReason }}</td>
+        </tr>
+        <tr>
+            <td>Sell reason</td>
+            <td>{{ order.sellReason }}</td>
+        </tr>
+        <tr>
+            <td>Buy date</td>
+            <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
+        </tr>
+        <tr>
+            <td>Quantity</td>
+            <td>{{ order.quantity }}</td>
+        </tr>
+        <tr>
+            <td>Buy price</td>
+            <td>{{ order.price }}</td>
+        </tr>
+        <tr>
+            <td>Sell date</td>
+            <td>{{ order.sellDate ? order.sellDate|date('Y-m-d H:i') : null }}</td>
+        </tr>
+        <tr>
+            <td>Sell price</td>
+            <td>{{ order.sellPrice }}</td>
+        </tr>
+        <tr>
+            <td>Total</td>
+            <td>{{ total }}</td>
+        </tr>
+        <tr>
+            <td>Profit</td>
+            <td>{{ order.profit }}</td>
+        </tr>
+        <tr>
+            <td>Percent</td>
+            <td>{{ percent }}</td>
+        </tr>
+        </tbody>
+    </table>
+{% endblock %}

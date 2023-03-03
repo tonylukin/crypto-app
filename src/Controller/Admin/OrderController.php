@@ -81,4 +81,12 @@ class OrderController extends AbstractController
             'form' => $form->createView(),
         ]);
     }
+
+    #[Route(path: '/admin/order/{id}', name: 'admin_order_view')]
+    public function view(Order $order): Response
+    {
+        return $this->render('admin/order/view.html.twig', [
+            'order' => $order,
+        ]);
+    }
 }

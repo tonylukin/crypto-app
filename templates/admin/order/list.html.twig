@@ -47,7 +47,7 @@
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
                 {% set currentDaysInterval = date(order.createdAt).diff(date(order.sellDate)).days + 1 %}
                 <tr class="{{ order.sold ? 'table-success' : (currentDaysInterval <= 7 ? 'table-warning' : 'table-danger') }}">
-                    <td>{{ order.id }}</td>
+                    <td><a href="{{ path('admin_order_view', {id: order.id}) }}">{{ order.id }}</a></td>
                     <td>{{ order.symbol.name }} [{{ order.symbol.id }}]</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
                     <td>{{ order.quantity }}</td>

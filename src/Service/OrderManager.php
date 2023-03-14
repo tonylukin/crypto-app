@@ -55,13 +55,16 @@ class OrderManager
 
         if ($price < 5) { // DOGE etc
             $quantity = floor($totalPrice / $price);
+            $precision = 2;
         } elseif ($price < 20) { // MATIC etc
             $quantity = round($totalPrice / $price, 1);
+            $precision = 2;
         } else {
-            $quantity = round($totalPrice / $price, $price > 1000 ? 4 : 2);
+            $precision = $price > 1000 ? 4 : 2;
+            $quantity = round($totalPrice / $price, $precision);
         }
 
-        $quantityAfterFee = round($quantity * (1 - $this->api->getFeeMultiplier()), 4, PHP_ROUND_HALF_DOWN);
+        $quantityAfterFee = round($quantity * (1 - $this->api->getFeeMultiplier()), $precision, PHP_ROUND_HALF_DOWN);
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())

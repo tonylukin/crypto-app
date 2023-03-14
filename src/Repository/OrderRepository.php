@@ -113,6 +113,8 @@ class OrderRepository extends ServiceEntityRepository
         $qb
             ->innerJoin('o.symbol', 'symbol')
             ->addSelect('symbol')
+            ->innerJoin('symbol.userSymbols', 'userSymbol', 'WITH', 'userSymbol.user = :user')
+            ->addSelect('userSymbol')
         ;
         if ($symbol !== null) {
             $qb
@@ -141,8 +143,9 @@ class OrderRepository extends ServiceEntityRepository
     ): array {
         $qb = $this->getDateIntervalQueryBuilder($user, $dateStart, $dateEnd, $onlyCompleted);
         $qb
-            ->select('COUNT(o.id) as count, SUM(o.profit) as sum, AVG(DATEDIFF(o.sellDate, o.createdAt) + 1) as avgDays, symbol.name')
+            ->select('COUNT(o.id) as count, SUM(o.profit) as sum, AVG(DATEDIFF(o.sellDate, o.createdAt) + 1) as avgDays, symbol.name, userSymbol.active')
             ->innerJoin('o.symbol', 'symbol')
+            ->innerJoin('symbol.userSymbols', 'userSymbol', 'WITH', 'userSymbol.user = :user')
         ;
         if ($onlyCompleted) {
             $qb

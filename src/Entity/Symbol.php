@@ -28,6 +28,7 @@ class Symbol
     private Collection $orders;
 
     #[ORM\OneToMany(targetEntity: UserSymbol::class, mappedBy: 'symbol', orphanRemoval: true)]
+    #[Groups(['order_price_details'])]
     private Collection $userSymbols;
 
     public function __construct()

@@ -9,7 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 class UserSetting
 {
     private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 48; // 24 hours
-    private const MIN_FALLEN_PRICE_PERCENTAGE = 7; // разница между максимальным значением за последнее время и текущим при достижении дна
+    private const MIN_FALLEN_PRICE_PERCENTAGE = 10; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const FALLEN_PRICE_INTERVAL_HOURS = 48; // период для отчета максимального значения цены при падении, "последнее время" для константы выше
     private const MINIMAL_PROFIT_PERCENT = 2;
     private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
@@ -17,7 +17,7 @@ class UserSetting
     private const MAX_PERCENT_DIFF_ON_MOVING = 3;
     private const LEGAL_MOVING_STEP_PERCENT = 4; // шаг цены за час, который считаем адекватным. шаг больше - это уже резкое падение или рост
     private const HOURS_EXTREMELY_SHORT_INTERVAL_FOR_PRICES = 4;
-    private const DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE = 4; // интервал в днях для проверки падения цены, которая происходит на коротком взлете ("ситуация в TWT")
+    private const DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE = 7; // интервал в днях для проверки падения цены, которая происходит на коротком взлете ("ситуация в TWT")
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -224,7 +224,7 @@ class UserSetting
         return $this;
     }
 
-    public function getDaysIntervalMinPriceOnDistance(): ?int
+    public function getDaysIntervalMinPriceOnDistance(): int
     {
         return $this->daysIntervalMinPriceOnDistance ?? self::DAYS_INTERVAL_MIN_PRICE_ON_DISTANCE;
     }

@@ -112,10 +112,8 @@ class BestPriceAnalyzer
                 if ($highDiff / $price * 100 < $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent()) {
                     return false;
                 }
-            }
 
-            // смотрим, чтобы эти падения не были на самих хаях
-            if ($direction === self::DIRECTION_PRICE_FALLING_DOWN) {
+                // смотрим, чтобы эти падения не были на самих хаях
                 $minDiff = $price - $this->priceRepository->getLastMinPrice(
                     $userSymbol->getSymbol(),
                     new \DateInterval(sprintf('P%dD', $userSymbol->getUser()->getUserSetting()->getDaysIntervalMinPriceOnDistance()))

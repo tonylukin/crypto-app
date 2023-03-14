@@ -10,6 +10,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 class UserSymbol
 {
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    #[Groups(['order_price_details'])]
     private bool $active = true;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]

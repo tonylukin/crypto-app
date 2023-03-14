@@ -31,7 +31,7 @@
             {% for userSymbol in userSymbols %}
                 <tr class="{{ userSymbol.active ? '' : 'table-danger' }}">
                     <td>{{ userSymbol.symbol.id }}</td>
-                    <td>{{ userSymbol.symbol.name }}</td>
+                    <td style="{{ userSymbol.active ? '' : 'text-decoration: line-through;' }}">{{ userSymbol.symbol.name }}</td>
                     <td>{{ userSymbol.riskable }}</td>
                     <td>{{ userSymbol.totalPrice }}</td>
                     <td>

@@ -1,5 +1,6 @@
 {% extends 'layout.html.twig' %}
 {# @var array items #}
+{# @var array parserData #}
 
 {% block title %}Buff Buy Items{% endblock %}
 
@@ -7,33 +8,32 @@
     <table class="table">
         <thead>
         <tr>
-            <th>ID</th>
+            <th>Name, ID</th>
             <th>Icon</th>
-            <th>Steam Price</th>
-            <th>Steam Price CNY</th>
-            <th>Name</th>
-            <th>Quick Price</th>
-            <th>Buy Max Price</th>
+            <th>Steam Price, USD</th>
+            <th>Steam Price, CNY</th>
+            <th>Other sources, USD</th>
+            <th>Quick Price, USD</th>
+            <th>Buy Max Price, USD</th>
             <th>Buy Num</th>
-            <th>Sell Min Price</th>
+            <th>Sell Min Price, USD</th>
             <th>Sell Num</th>
-            <th>Steam Market URL</th>
         </tr>
         </thead>
         <tbody>
         {% for item in items %}
+            {% set cnyToUsdConverter = item.goods_info.steam_price / item.goods_info.steam_price_cny %}
             <tr>
-                <td>{{ item.id }}</td>
-                <td><img width="200" src="{{ item.goods_info.icon_url }}" alt=""></td>
+                <td><b>{{ item.market_hash_name }}</b> [#{{ item.id }}]</td>
+                <td><a title="Steam URL" href="{{ item.steam_market_url }}" target="_blank"><img width="200" src="{{ item.goods_info.icon_url }}" alt=""></a></td>
                 <td>{{ item.goods_info.steam_price }}</td>
                 <td>{{ item.goods_info.steam_price_cny }}</td>
-                <td>{{ item.market_hash_name }}</td>
-                <td>{{ item.quick_price }}</td>
-                <td>{{ item.buy_max_price }}</td>
+                <td>{{ parserData[item.market_hash_name]|map(row => row.source ~ ':&nbsp;<b>' ~ row.price ~ '</b>')|join('<br>')|raw }}</td>
+                <td>{{ (item.quick_price * cnyToUsdConverter)|round(2) }}</td>
+                <td>{{ (item.buy_max_price * cnyToUsdConverter)|round(2) }}</td>
                 <td>{{ item.buy_num }}</td>
-                <td>{{ item.sell_min_price }}</td>
+                <td>{{ (item.sell_min_price * cnyToUsdConverter)|round(2) }}</td>
                 <td>{{ item.sell_num }}</td>
-                <td><a href="{{ item.steam_market_url }}" target="_blank">URL</a></td>
             </tr>
         {% endfor %}
         </tbody>

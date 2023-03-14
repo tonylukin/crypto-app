@@ -48,7 +48,7 @@
                 {% set currentDaysInterval = date(order.createdAt).diff(date(order.sellDate)).days + 1 %}
                 <tr class="{{ order.sold ? 'table-success' : (currentDaysInterval <= 7 ? 'table-warning' : 'table-danger') }}">
                     <td><a href="{{ path('admin_order_view', {id: order.id}) }}">{{ order.id }}</a></td>
-                    <td>{{ order.symbol.name }} [{{ order.symbol.id }}]</td>
+                    <td style="{{ order.symbol.userSymbols[0].active ? '' : 'text-decoration: line-through;' }}">{{ order.symbol.name }} [{{ order.symbol.id }}]</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>
                     <td>{{ order.quantity }}</td>
                     <td>{{ order.price }}</td>
@@ -99,7 +99,7 @@
                 <tbody>
                 {% for count in counts %}
                     <tr class="{{ count.avgDays > 7 ? 'table-danger' : '' }}">
-                        <td>{{ count.name }}</td>
+                        <td style="{{ count.active ? '' : 'text-decoration: line-through;' }}">{{ count.name }}</td>
                         <td>{{ count.count }}</td>
                         <td>{{ count.sum }}</td>
                         <td>{{ count.avgDays }}</td>

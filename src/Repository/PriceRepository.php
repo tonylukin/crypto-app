@@ -125,7 +125,7 @@ class PriceRepository extends ServiceEntityRepository
     public function getLastMinPrice(Symbol $symbol, \DateInterval $dateInterval): ?float
     {
         $qb = $this->createQueryBuilder('price')
-            ->select('MIN(price.price) AS highPrice')
+            ->select('MIN(price.price) AS minPrice')
             ->where('price.datetime >= :dateTime')
             ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
             ->andWhere('price.symbol = :symbol')

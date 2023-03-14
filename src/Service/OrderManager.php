@@ -55,16 +55,14 @@ class OrderManager
 
         if ($price < 5) { // DOGE etc
             $quantity = floor($totalPrice / $price);
-            $precision = 2;
         } elseif ($price < 20) { // MATIC etc
             $quantity = round($totalPrice / $price, 1);
-            $precision = 2;
         } else {
             $precision = $price > 1000 ? 4 : 2;
             $quantity = round($totalPrice / $price, $precision);
         }
 
-        $quantityAfterFee = round($quantity * (1 - $this->api->getFeeMultiplier()), $precision, PHP_ROUND_HALF_DOWN);
+        $quantityAfterFee = round($quantity * (1 - $this->api->getFeeMultiplier()), 4, PHP_ROUND_HALF_DOWN);
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())
@@ -78,7 +76,8 @@ class OrderManager
             $this->entityManager->flush();
 
             $this->api->setCredentials($user);
-            $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $price);
+            $priceForApi = round(round($quantity * $price, 4, PHP_ROUND_HALF_DOWN) / $quantity, 4, PHP_ROUND_HALF_DOWN);
+            $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $priceForApi);
             $this->logger->warning('Buy response', [
                 'user' => $user->getUserIdentifier(),
                 'response' => $response,
@@ -135,7 +134,8 @@ class OrderManager
             $this->entityManager->flush();
 
             $this->api->setCredentials($user);
-            $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
+            $priceForApi = round(round($pendingOrder->getQuantity() * $price, 4, PHP_ROUND_HALF_DOWN) / $pendingOrder->getQuantity(), 4, PHP_ROUND_HALF_DOWN);
+            $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $priceForApi);
             $this->logger->warning('Sell response', [
                 'user' => $user->getUserIdentifier(),
                 'response' => $response,

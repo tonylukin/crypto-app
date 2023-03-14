@@ -61,7 +61,7 @@ class OrderManager
             $quantity = round($totalPrice / $price, $price > 1000 ? 4 : 2);
         }
 
-        $quantityAfterFee = $quantity * (1 - $this->api->getFeeMultiplier());
+        $quantityAfterFee = round($quantity * (1 - $this->api->getFeeMultiplier()), 4, PHP_ROUND_HALF_DOWN);
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())

@@ -10,7 +10,8 @@ use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 
 class API extends \Binance\API implements ApiInterface
 {
-    private const FEE_PERCENT = 0.5;
+//    private const FEE_PERCENT = 0.5;
+    private const FEE_PERCENT = 0; // basically, it is 0.5 for binance, but we use BNB for that which gives a discount
 
     public function __construct(
         private string $environmentId,

@@ -14,7 +14,7 @@ use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
  */
 class API extends HuobiSpot implements ApiInterface
 {
-    private const FEE_PERCENT = 0.5;
+    private const FEE_PERCENT = 0.2;
 
     public function __construct(
         private string $environmentId,

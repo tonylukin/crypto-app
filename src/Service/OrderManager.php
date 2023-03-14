@@ -60,12 +60,14 @@ class OrderManager
         } else {
             $quantity = round($totalPrice / $price, $price > 1000 ? 4 : 2);
         }
+
+        $quantityAfterFee = $quantity * (1 - $this->api->getFeeMultiplier());
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())
                 ->setSymbol($userSymbol->getSymbol())
                 ->setPrice($price)
-                ->setQuantity($quantity)
+                ->setQuantity($quantityAfterFee)
                 ->setBuyReason($this->bestPriceAnalyzer->getReason())
                 ->setUser($user)
             ;
@@ -77,7 +79,7 @@ class OrderManager
             $this->logger->warning('Buy response', [
                 'user' => $user->getUserIdentifier(),
                 'response' => $response,
-                'quantity' => $quantity,
+                'quantity' => $quantityAfterFee,
                 'price' => $price
             ]);
             $this->entityManager->commit();

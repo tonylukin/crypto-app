@@ -16,11 +16,11 @@ class Math
     public static function getPrecisionByAmount(float $amount): int
     {
         if ($amount < 5) { // DOGE etc
-            return 1;
+            return 0;
         } elseif ($amount < 20) { // MATIC etc
-            return 2;
+            return 1;
         } elseif ($amount < 1000) {
-            return 3;
+            return 2;
         }
 
         return 4;

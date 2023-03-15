@@ -1,8 +1,15 @@
+{# @var bool showAll #}
+{# @var array data #}
 {% extends 'admin/base.html.twig' %}
 
 {% block title %}Cron report{% endblock %}
 
 {% block body %}
+    {% if showAll %}
+        <a href="{{ app.request.pathInfo }}" class="btn btn-success">Show last 30</a>
+    {% else %}
+        <a href="{{ app.request.pathInfo }}?all=1" class="btn btn-warning">Show all</a>
+    {% endif %}
     <div class="mt-4">
         <table class="table table-bordered table-striped">
             <thead>

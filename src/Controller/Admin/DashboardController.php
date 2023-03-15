@@ -61,15 +61,18 @@ class DashboardController extends AbstractController
 
     #[IsGranted(User::ROLE_ADMIN)]
     #[Route(path: '/admin/dashboard/cron-report', name: 'admin_dashboard_cron_report')]
-    public function cronReport(EntityManagerInterface $entityManager): Response
+    public function cronReport(Request $request, EntityManagerInterface $entityManager): Response
     {
+        $showAll = $request->query->getBoolean('all');
+        $sqlShowAll = $showAll ? '' : 'LIMIT 30';
         $connection = $entityManager->getConnection();
         $sql = <<<SQL
-            SELECT * FROM cron_report ORDER BY id DESC LIMIT 30;
+            SELECT * FROM cron_report ORDER BY id DESC {$sqlShowAll};
         SQL;
         $data = $connection->fetchAllAssociative($sql);
 
         return $this->render('admin/dashboard/cron_report.html.twig', [
+            'showAll' => $showAll,
             'data' => $data,
         ]);
     }

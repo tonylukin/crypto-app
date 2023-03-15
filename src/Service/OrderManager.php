@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Order;
-use App\Entity\User;
 use App\Entity\UserSymbol;
+use App\Lib\Math;
 use App\Repository\OrderRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -53,16 +53,10 @@ class OrderManager
             return false;
         }
 
-        if ($price < 5) { // DOGE etc
-            $quantity = floor($totalPrice / $price);
-        } elseif ($price < 20) { // MATIC etc
-            $quantity = round($totalPrice / $price, 1);
-        } else {
-            $precision = $price > 1000 ? 4 : 2;
-            $quantity = round($totalPrice / $price, $precision);
-        }
+        $precision = Math::getPrecisionByAmount($price);
+        $quantityBeforeFee = round(($totalPrice / $price) / (1 - $this->api->getFeeMultiplier()), $precision);
+        $quantityAfterFee = Math::roundDown($quantityBeforeFee * (1 - $this->api->getFeeMultiplier()), $precision);
 
-        $quantityAfterFee = round($quantity * (1 - $this->api->getFeeMultiplier()), 4, PHP_ROUND_HALF_DOWN);
         $this->entityManager->beginTransaction();
         try {
             $order = (new Order())
@@ -76,8 +70,7 @@ class OrderManager
             $this->entityManager->flush();
 
             $this->api->setCredentials($user);
-            $priceForApi = round(round($quantity * $price, 4, PHP_ROUND_HALF_DOWN) / $quantity, 4, PHP_ROUND_HALF_DOWN);
-            $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantity, $priceForApi);
+            $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantityBeforeFee, $price);
             $this->logger->warning('Buy response', [
                 'user' => $user->getUserIdentifier(),
                 'response' => $response,
@@ -91,7 +84,10 @@ class OrderManager
             $this->logger->error($e->getMessage(), [
                 'user' => $user->getUserIdentifier(),
                 'symbol' => $userSymbol->getSymbol()->getName(),
-                'totalPrice' => $quantity * $price,
+                'quantityBeforeFee' => $quantityBeforeFee,
+                'quantityAfterFee' => $quantityAfterFee,
+                'price' => $price,
+                'totalPrice' => $quantityBeforeFee * $price,
                 'method' => __METHOD__
             ]);
             return false;
@@ -134,8 +130,7 @@ class OrderManager
             $this->entityManager->flush();
 
             $this->api->setCredentials($user);
-            $priceForApi = round(round($pendingOrder->getQuantity() * $price, 4, PHP_ROUND_HALF_DOWN) / $pendingOrder->getQuantity(), 4, PHP_ROUND_HALF_DOWN);
-            $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $priceForApi);
+            $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
             $this->logger->warning('Sell response', [
                 'user' => $user->getUserIdentifier(),
                 'response' => $response,

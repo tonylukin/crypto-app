@@ -144,6 +144,8 @@ class OrderManager
             $this->logger->error($e->getMessage(), [
                 'user' => $user->getUserIdentifier(),
                 'symbol' => $userSymbol->getSymbol()->getName(),
+                'quantity' => $pendingOrder->getQuantity(),
+                'price' => $price,
                 'totalPrice' => $pendingOrder->getQuantity() * $price,
                 'method' => __METHOD__
             ]);

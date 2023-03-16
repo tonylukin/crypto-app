@@ -46,7 +46,7 @@ class OrderManager
             return false;
         }
 
-        // если только что была продажа, смотрим изменение цены - она должна измениться мин. на 5% и упасть
+        // если только что была продажа, смотрим изменение цены - она должна измениться мин. на {n}% и упасть
         $order = $this->orderRepository->getLastFinishedOrder($user, $userSymbol->getSymbol());
         if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()
             && ($order->getSellPrice() - $price) / $price * 100 < $user->getUserSetting()->getMinPriceDiffPercentAfterLastSell()) {

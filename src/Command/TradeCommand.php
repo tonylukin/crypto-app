@@ -58,6 +58,10 @@ class TradeCommand extends Command
         $apiCache = [];
         foreach ($symbols as $symbol) {
             foreach ($symbol->getUserSymbols() as $userSymbol) {
+                if (!$userSymbol->isActive()) {
+                    continue;
+                }
+
                 $exchangeId = $userSymbol->getUser()->getUserSetting()->getUseExchange();
                 if (!\array_key_exists($exchangeId, $apiCache)) {
                     $apiCache[$exchangeId] = $this->apiFactory->build($exchangeId);

@@ -17,6 +17,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -24,6 +25,12 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class DashboardController extends AbstractController
 {
+    #[Route(path: '/admin', name: 'admin_dashboard')]
+    public function adminHomepage(): RedirectResponse
+    {
+        return $this->redirectToRoute('admin_order_list');
+    }
+
     #[Route(path: '/admin/dashboard/prices/{symbol}', name: 'admin_dashboard_prices', defaults: ['symbol' => 'BTCBUSD'])]
     #[ParamConverter('symbol', options: ['mapping' => ['symbol' => 'name']])]
     public function prices(

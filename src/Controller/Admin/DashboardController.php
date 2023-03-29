@@ -70,16 +70,16 @@ class DashboardController extends AbstractController
     #[Route(path: '/admin/dashboard/cron-report', name: 'admin_dashboard_cron_report')]
     public function cronReport(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $showAll = $request->query->getBoolean('all');
-        $sqlShowAll = $showAll ? '' : 'LIMIT 30';
+        $sqlShowAll = $request->query->getBoolean('all') ? '' : 'LIMIT 30';
+        $sqlHideAccountNoMoney = $request->query->getBoolean('hide-no-money-logs') ? "WHERE error NOT LIKE '%insufficient balance%'" : '';
+
         $connection = $entityManager->getConnection();
         $sql = <<<SQL
-            SELECT * FROM cron_report ORDER BY id DESC {$sqlShowAll};
+            SELECT * FROM cron_report {$sqlHideAccountNoMoney} ORDER BY id DESC {$sqlShowAll};
         SQL;
         $data = $connection->fetchAllAssociative($sql);
 
         return $this->render('admin/dashboard/cron_report.html.twig', [
-            'showAll' => $showAll,
             'data' => $data,
         ]);
     }

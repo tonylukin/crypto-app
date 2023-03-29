@@ -5,10 +5,15 @@
 {% block title %}Cron report{% endblock %}
 
 {% block body %}
-    {% if showAll %}
+    {% if app.request.query.get('all') %}
         <a href="{{ app.request.pathInfo }}" class="btn btn-success">Show last 30</a>
     {% else %}
         <a href="{{ app.request.pathInfo }}?all=1" class="btn btn-warning">Show all</a>
+    {% endif %}
+    {% if app.request.query.get('hide-no-money-logs') %}
+        <a href="{{ app.request.pathInfo }}" class="btn btn-success">Show all</a>
+    {% else %}
+        <a href="{{ app.request.pathInfo }}?hide-no-money-logs=1" class="btn btn-warning">Hide insufficient balance logs</a>
     {% endif %}
     <div class="mt-4">
         <table class="table table-bordered table-striped">

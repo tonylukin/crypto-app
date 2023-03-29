@@ -105,11 +105,20 @@ class BestPriceAnalyzer
 
             // если падение от цены недостаточное по отношению к максимальной цене за последнее время, то прерываем
             if ($direction === self::DIRECTION_PRICE_FALLING_DOWN) {
-                $highDiff = $this->priceRepository->getLastHighPrice(
+                $lastHighPrice = $this->priceRepository->getLastHighPrice(
                     $userSymbol->getSymbol(),
                     new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getFallenPriceIntervalHours())),
-                ) - $price;
-                if ($highDiff / $price * 100 < $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent()) {
+                );
+                $lastMinPrice = $this->priceRepository->getLastMinPrice(
+                    $userSymbol->getSymbol(),
+                    new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getFallenPriceIntervalHours())),
+                );
+                $minFallenPricePercent = $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent();
+                // для ситуаций, когда происходит скачок цены, мы пытаемся высчитать коэф-т, который может увеличить наш минимальный процент падения,
+                // но только увеличить! В случае если там разница меньше нашего мин. падения, этот коэф-т =1
+                $coefficient = (($lastHighPrice - $lastMinPrice) / $lastMinPrice * 100) / $minFallenPricePercent;
+                $highDiff = $lastHighPrice - $price;
+                if ($highDiff / $price * 100 < $minFallenPricePercent * max(1, $coefficient)) {
                     return false;
                 }
 

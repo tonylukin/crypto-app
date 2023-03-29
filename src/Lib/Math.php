@@ -25,4 +25,21 @@ class Math
 
         return 4;
     }
+
+    public static function outputSmallNumber(float $number): float|string
+    {
+        if ($number >= 0.0001) {
+            return $number;
+        }
+        if (!preg_match('/(.*?)E-(\d)$/', (string) $number, $matches)) {
+            return $number;
+        }
+
+        $additionalZeroCount = 0;
+        if (str_contains($matches[1], '.')) {
+            $additionalZeroCount = strlen(rtrim($matches[1], '0')) - 2; // 2: 1 for int and 1 for dot symbol - 1.098E-5 => 1.098 => 5 - 2 = 3 additional count
+        }
+        $zeroCount = $additionalZeroCount + (int) $matches[2];
+        return sprintf("%.{$zeroCount}f", $number);
+    }
 }

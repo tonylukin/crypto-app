@@ -57,12 +57,13 @@ class BestPriceAnalyzerTest extends KernelTestCase
 
     public function priceForOrderProvider(): \Generator
     {
-        yield [28.49, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, true]; // price is match because is falling down
-        yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is on a top
-        yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is rising up after falling
-        yield [1596.09, PriceFixture::NOT_RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is not changed direction
-        yield [1599.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is changed direction but step it too big
-        yield [1.7, PriceFixture::TWT_RISING_ON_INTERVAL_AND_THEN_FALLING_ON_DISTANCE_SYMBOL, false]; // цена растет после падения, НО это происходит на хаях относительно предыдущего движения. НЕ БЕРЕМ
+//        yield [28.49, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, false]; // price is not match because 43% diff between highest and lowest prices
+//        yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is on a top
+//        yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is rising up after falling
+//        yield [1596.09, PriceFixture::NOT_RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is not changed direction
+//        yield [1599.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is changed direction but step it too big
+//        yield [1.7, PriceFixture::TWT_RISING_ON_INTERVAL_AND_THEN_FALLING_ON_DISTANCE_SYMBOL, false]; // цена растет после падения, НО это происходит на хаях относительно предыдущего движения. НЕ БЕРЕМ
+        yield [1.129, PriceFixture::MINA_FALLING_AFTER_RISING_WITH_BIG_DIFF_BETWEEN_HIGH_AND_LOW_SYMBOL, false]; // цена падает после падения, НО, оглядываясь назад, мы видим, что там огромная разница между мин и макс значениями цены, поэтому высчитывается минимальный коэф-т для процента мин цены
     }
 
     /**

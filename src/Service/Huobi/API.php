@@ -14,7 +14,7 @@ use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
  */
 class API extends HuobiSpot implements ApiInterface
 {
-//    private const FEE_PERCENT = 0.16;
+    private const FEE_PERCENT_FOR_CALCULATING = 0.2;
     private const FEE_PERCENT = 0; // basically, it is 0.2 for huobi, but we use HT for that which gives a discount
 
     public function __construct(
@@ -71,9 +71,9 @@ class API extends HuobiSpot implements ApiInterface
         return $result;
     }
 
-    public function getFeeMultiplier(): float
+    public function getFeeMultiplier(bool $usedForCalculatingOnly = false): float
     {
-        return self::FEE_PERCENT / 100;
+        return ($usedForCalculatingOnly ? self::FEE_PERCENT_FOR_CALCULATING : self::FEE_PERCENT) / 100;
     }
 
     public function setCredentials(ExchangeCredentialsInterface $user): ApiInterface

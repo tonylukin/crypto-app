@@ -216,7 +216,7 @@ class BestPriceAnalyzer
     {
         $expenses = $pendingOrder->getPrice() * $pendingOrder->getQuantity();
         $profit = ($possibleSalePrice - $pendingOrder->getPrice()) * $pendingOrder->getQuantity();
-        $exchangeFee = $possibleSalePrice * $pendingOrder->getQuantity() * $this->api->getFeeMultiplier();
+        $exchangeFee = $possibleSalePrice * $pendingOrder->getQuantity() * $this->api->getFeeMultiplier(true);
         $profit -= $exchangeFee;
 
         if ($profit < 0) {

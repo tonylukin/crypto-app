@@ -12,7 +12,7 @@ interface ApiInterface
 
     public function sellLimit(string $symbol, float $quantity, float $price): array;
 
-    public function getFeeMultiplier(): float;
+    public function getFeeMultiplier(bool $usedForCalculatingOnly): float;
 
     public function setCredentials(ExchangeCredentialsInterface $user): self;
 }

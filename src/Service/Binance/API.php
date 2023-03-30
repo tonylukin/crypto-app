@@ -10,7 +10,7 @@ use Nzo\UrlEncryptorBundle\Encryptor\Encryptor;
 
 class API extends \Binance\API implements ApiInterface
 {
-//    private const FEE_PERCENT = 0.5;
+    private const FEE_PERCENT_FOR_CALCULATING = 0.5;
     private const FEE_PERCENT = 0; // basically, it is 0.5 for binance, but we use BNB for that which gives a discount
 
     public function __construct(
@@ -44,9 +44,9 @@ class API extends \Binance\API implements ApiInterface
         return parent::sell($symbol, (string) $quantity, (string) $price);
     }
 
-    public function getFeeMultiplier(): float
+    public function getFeeMultiplier(bool $usedForCalculatingOnly = false): float
     {
-        return self::FEE_PERCENT / 100;
+        return ($usedForCalculatingOnly ? self::FEE_PERCENT_FOR_CALCULATING : self::FEE_PERCENT) / 100;
     }
 
     public function setCredentials(ExchangeCredentialsInterface $user): self

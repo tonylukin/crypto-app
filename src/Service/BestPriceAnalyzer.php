@@ -116,9 +116,11 @@ class BestPriceAnalyzer
                 $minFallenPricePercent = $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent();
                 // для ситуаций, когда происходит скачок цены, мы пытаемся высчитать коэф-т, который может увеличить наш минимальный процент падения,
                 // но только увеличить! В случае если там разница меньше нашего мин. падения, этот коэф-т =1
-                $coefficient = (($lastHighPrice - $lastMinPrice) / $lastMinPrice * 100) / $minFallenPricePercent;
-                $highDiff = $lastHighPrice - $price;
-                if ($highDiff / $price * 100 < $minFallenPricePercent * max(1, $coefficient)) {
+                $coefficient = ($lastHighPrice - $lastMinPrice) / $lastMinPrice * 100;
+                // здесь мы смотрим, чтобы наш коэф-т падения (в процентах) не был больше ДВОЙНОГО разрешенного падения
+                // двойного потому, что мы смотри различие между низом и верхом. Норму можно получить делением пополам
+                $coefficient = $coefficient > 2 * $minFallenPricePercent ? $coefficient : 1;
+                if (($lastHighPrice - $price) / $price * 100 < $minFallenPricePercent * max(1, $coefficient)) {
                     return false;
                 }
 

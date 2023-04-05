@@ -6,17 +6,18 @@ namespace App\Controller;
 
 use App\Service\Buff\BuffApi;
 use App\Service\Buff\ParserFetcher;
-use Doctrine\DBAL\Connection;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 class BuffController extends AbstractController
 {
     public function __construct(
         private BuffApi $buffApi,
-    ) {}
+    ) {
+        throw new AccessDeniedHttpException('Denied');
+    }
 
     #[Route('/buff', name: 'buff_buy_list')]
     public function buyList(ParserFetcher $parserFetcher): Response

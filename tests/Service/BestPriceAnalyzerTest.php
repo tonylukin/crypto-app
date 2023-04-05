@@ -66,6 +66,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
         yield [1.129, PriceFixture::MINA_FALLING_AFTER_RISING_WITH_BIG_DIFF_BETWEEN_HIGH_AND_LOW_SYMBOL, false]; // цена падает после падения, НО, оглядываясь назад, мы видим, что там огромная разница между мин и макс значениями цены, поэтому высчитывается минимальный коэф-т для процента мин цены
         yield [27658.28, PriceFixture::BTC_RISE_THEN_FALL_SYMBOL, true]; // цена битка падает в заданном интервале (5%)
         yield [2.041, PriceFixture::UMA_SMALL_FALLING_DOWN_SYMBOL, true]; // нормальное падение, нормальная цена
+        yield [27743.97, PriceFixture::BTC_RISE_THEN_FALL_2_SYMBOL, false]; // нормальное падение, нормальная цена, но чуток не дотягивает до 5% -> 4.8%
     }
 
     /**

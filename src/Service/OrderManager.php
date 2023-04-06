@@ -73,6 +73,7 @@ class OrderManager
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantityBeforeFee, $price);
             $this->logger->warning('Buy response', [
                 'user' => $user->getUserIdentifier(),
+                'symbol' => $userSymbol->getSymbol()->getName(),
                 'response' => $response,
                 'quantity' => $quantityAfterFee,
                 'price' => $price
@@ -133,6 +134,7 @@ class OrderManager
             $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
             $this->logger->warning('Sell response', [
                 'user' => $user->getUserIdentifier(),
+                'symbol' => $userSymbol->getSymbol()->getName(),
                 'response' => $response,
                 'quantity' => $pendingOrder->getQuantity(),
                 'price' => $price

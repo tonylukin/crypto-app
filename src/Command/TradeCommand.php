@@ -56,6 +56,7 @@ class TradeCommand extends Command
 
         /** @var ApiInterface[] $apiCache */
         $apiCache = [];
+        $userIds = [];
         foreach ($symbols as $symbol) {
             foreach ($symbol->getUserSymbols() as $userSymbol) {
                 if (!$userSymbol->isActive()) {
@@ -66,7 +67,16 @@ class TradeCommand extends Command
                 if (!\array_key_exists($exchangeId, $apiCache)) {
                     $apiCache[$exchangeId] = $this->apiFactory->build($exchangeId);
                 }
-                $this->orderManager->setApi($apiCache[$exchangeId]);
+                $this->orderManager->setApi($apiCache[$exchangeId], $userSymbol->getUser());
+
+                if (!\array_key_exists($userSymbol->getUser()->getId(), $userIds)) {
+                    $result = $this->orderManager->cancelUnfilledOrders($userSymbol->getUser());
+                    foreach ($result as $row) {
+                        $this->io->writeln("Order cancelled for {$row['symbol']}, quantity {$row['quantity']} of user {$userSymbol->getUser()->getUserIdentifier()} order #{$row['orderId']}[{$row['status']}]");
+                    }
+                    $userIds[$userSymbol->getUser()->getId()] = 1;
+                }
+
                 if (!$userSymbol->getUser()->getUserSetting()->isDisableTrading()) {
                     $this->io->write("Start trading for {$symbol->getName()} of user {$userSymbol->getUser()->getUserIdentifier()}");
                     $this->orderManager->buy($userSymbol, $userSymbol->getTotalPrice() ?? Symbol::DEFAULT_TOTAL_PRICE_USD);

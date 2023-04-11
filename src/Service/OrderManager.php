@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Order;
+use App\Entity\Symbol;
+use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Lib\Math;
 use App\Repository\OrderRepository;
+use App\Repository\SymbolRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -19,13 +22,15 @@ class OrderManager
         private EntityManagerInterface $entityManager,
         private OrderRepository $orderRepository,
         private BestPriceAnalyzer $bestPriceAnalyzer,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private SymbolRepository $symbolRepository,
     )
     {}
 
-    public function setApi(ApiInterface $api): self
+    public function setApi(ApiInterface $api, ExchangeCredentialsInterface $user): self
     {
         $this->api = $api;
+        $this->api->setCredentials($user);
 
         return $this;
     }
@@ -47,7 +52,7 @@ class OrderManager
         }
 
         // если только что была продажа, смотрим изменение цены - она должна измениться мин. на {n}% и упасть
-        $order = $this->orderRepository->getLastFinishedOrder($user, $userSymbol->getSymbol());
+        $order = $this->orderRepository->getLastOrder($user, $userSymbol->getSymbol(), Order::STATUS_SELL);
         if ($order !== null && $order->getSellDate()->modify('+24 hours') > new \DateTime()
             && ($order->getSellPrice() - $price) / $price * 100 < $user->getUserSetting()->getMinPriceDiffPercentAfterLastSell()) {
             return false;
@@ -69,7 +74,6 @@ class OrderManager
             $this->entityManager->persist($order);
             $this->entityManager->flush();
 
-            $this->api->setCredentials($user);
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantityBeforeFee, $price);
             $this->logger->warning('Buy response', [
                 'user' => $user->getUserIdentifier(),
@@ -130,7 +134,6 @@ class OrderManager
             ;
             $this->entityManager->flush();
 
-            $this->api->setCredentials($user);
             $response = $this->api->sellLimit($userSymbol->getSymbol()->getName(), $pendingOrder->getQuantity(), $price);
             $this->logger->warning('Sell response', [
                 'user' => $user->getUserIdentifier(),
@@ -168,5 +171,43 @@ class OrderManager
             ->setSellReason(null)
         ;
         $this->entityManager->flush();
+    }
+
+    /**
+     * @return array<array{orderId: int, quantity: float, symbol: string, status: string}>
+     */
+    public function cancelUnfilledOrders(User $user): array
+    {
+        $result = $this->api->cancelUnfilledOrders();
+        if (empty($result)) {
+            return [];
+        }
+
+        $symbolNames = array_keys($result);
+        /** @var Symbol[] $symbols */
+        $symbols = [];
+        foreach ($this->symbolRepository->findByName($symbolNames) as $symbol) {
+            $symbols[$symbol->getName()] = $symbol;
+        }
+
+        $output = [];
+        foreach ($symbolNames as $symbolName) {
+            $order = $this->orderRepository->getLastOrder($user, $symbols[$symbolName]);
+            // todo let's look if there will be problems with it
+            if ($order === null || $order->getStatus() !== $result[$symbolName]['type']) { //  && $order->getQuantity() !== $result[$symbolName]['quantity']
+                throw new \Exception("Last order has different status for '{$symbolName}' of order #{$order->getId()}");
+            }
+
+            $output[] = [
+                'orderId' => $order->getId(),
+                'quantity' => $order->getQuantity(),
+                'symbol' => $symbolName,
+                'status' => $order->getStatus(),
+            ];
+            $this->entityManager->remove($order);
+        }
+
+        $this->entityManager->flush();
+        return $output;
     }
 }

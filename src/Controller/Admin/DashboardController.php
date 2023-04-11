@@ -71,11 +71,11 @@ class DashboardController extends AbstractController
     public function cronReport(Request $request, EntityManagerInterface $entityManager): Response
     {
         $sqlShowAll = $request->query->getBoolean('all') ? '' : 'LIMIT 30';
-        $sqlHideAccountNoMoney = $request->query->getBoolean('hide-no-money-logs') ? "WHERE error NOT LIKE '%insufficient balance%'" : '';
+        $sqlHideAccountNoMoney = $request->query->getBoolean('hide-no-money-logs') ? "AND error NOT LIKE '%insufficient balance%'" : '';
 
         $connection = $entityManager->getConnection();
         $sql = <<<SQL
-            SELECT * FROM cron_report {$sqlHideAccountNoMoney} ORDER BY id DESC {$sqlShowAll};
+            SELECT * FROM cron_report WHERE 1 = 1 {$sqlHideAccountNoMoney} ORDER BY id DESC {$sqlShowAll};
         SQL;
         $data = $connection->fetchAllAssociative($sql);
 

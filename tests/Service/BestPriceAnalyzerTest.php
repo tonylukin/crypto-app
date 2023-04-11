@@ -22,6 +22,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
         self::bootKernel();
         $container = static::getContainer();
         $this->apiMock = $this->createMock(ApiInterface::class);

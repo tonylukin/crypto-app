@@ -84,11 +84,9 @@ class OrderRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getLastFinishedOrder(User $user, Symbol $symbol): ?Order
+    public function getLastOrder(User $user, Symbol $symbol, ?string $status = null): ?Order
     {
         $qb = $this->createQueryBuilder('o')
-            ->where('o.status = :status')
-            ->setParameter('status', Order::STATUS_SELL)
             ->andWhere('o.symbol = :symbol')
             ->setParameter('symbol', $symbol)
             ->andWhere('o.user = :user')
@@ -96,6 +94,12 @@ class OrderRepository extends ServiceEntityRepository
             ->orderBy('o.id', 'DESC')
             ->setMaxResults(1)
         ;
+        if ($status !== null) {
+            $qb
+                ->andWhere('o.status = :status')
+                ->setParameter('status', $status)
+            ;
+        }
         return $qb->getQuery()->getOneOrNullResult();
     }
 

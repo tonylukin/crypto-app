@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service\Huobi;
 
+use App\Entity\Order;
 use App\Service\ApiInterface;
 use App\Service\ExchangeCredentialsInterface;
 use Lin\Huobi\HuobiSpot;
@@ -91,5 +92,62 @@ class API extends HuobiSpot implements ApiInterface
         $result = $this->account()->get();
 
         return $result['data'][0]['id'] ?? throw new \Exception('Can not get account id');
+    }
+
+    public function cancelUnfilledOrders(): array
+    {
+        /**
+         * @var array $result
+         * (
+         *     [status] => ok
+         *     [data] => Array
+         *         (
+         *             [0] => Array
+         *                 (
+         *                     [symbol] => btcusdt
+         *                     [source] => web
+         *                     [price] => 28009.970000000000000000
+         *                     [created-at] => 1681198311556
+         *                     [amount] => 0.000570000000000000
+         *                     [account-id] => 53327097
+         *                     [client-order-id] =>
+         *                     [filled-amount] => 0.0
+         *                     [filled-cash-amount] => 0.0
+         *                     [filled-fees] => 0.0
+         *                     [id] => 772533126367736
+         *                     [state] => submitted
+         *                     [type] => buy-limit
+         *                 )
+         *         )
+         * )
+         */
+        $result = $this->order()->getOpenOrders();
+        if (empty($result) || !array_key_exists(0, $result['data'])) {
+            return [];
+        }
+
+        $output = [];
+        foreach ($result['data'] as $row) {
+            if ((float) $row['filled-amount'] === 0.0) {
+                /**
+                 * @var array $cancelResult
+                 * (
+                 *     [status] => ok
+                 *     [data] => 772533126367736
+                 * )
+                 */
+                $cancelResult = $this->order()->postSubmitCancel([
+                    'order-id' => $row['id'],
+                ]);
+                if ($cancelResult['status'] === 'ok') {
+                    $output[strtoupper($row['symbol'])] = [
+                        'quantity' => $row['amount'],
+                        'type' => $row['type'] === 'buy-limit' ? Order::STATUS_BUY : Order::STATUS_SELL,
+                    ];
+                }
+            }
+        }
+
+        return $output;
     }
 }

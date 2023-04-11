@@ -15,4 +15,9 @@ interface ApiInterface
     public function getFeeMultiplier(bool $usedForCalculatingOnly): float;
 
     public function setCredentials(ExchangeCredentialsInterface $user): self;
+
+    /**
+     * @return array<string, array{type: string, quantity: string}>
+     */
+    public function cancelUnfilledOrders(): array;
 }

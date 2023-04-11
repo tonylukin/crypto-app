@@ -35,6 +35,7 @@ class OrderManagerTest extends KernelTestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
         self::bootKernel();
         $container = static::getContainer();
         $this->orderRepositoryMock = $this->createMock(OrderRepository::class);
@@ -71,7 +72,8 @@ class OrderManagerTest extends KernelTestCase
                 ->setUser($user)
             ;
             $this->orderManager->setApi(
-                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange())
+                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange()),
+                $user
             );
             $result = $this->orderManager->buy($userSymbol, 5);
             self::assertTrue($result);
@@ -101,7 +103,8 @@ class OrderManagerTest extends KernelTestCase
                 ->setUser($user)
             ;
             $this->orderManager->setApi(
-                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange())
+                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange()),
+                $user
             );
             $result = $this->orderManager->sell($userSymbol);
             self::assertTrue($result);

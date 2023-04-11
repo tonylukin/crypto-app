@@ -25,7 +25,7 @@ class ImportPricesCommand extends Command
 
     protected function initialize(InputInterface $input, OutputInterface $output): void
     {
-        // SymfonyStyle is an optional feature that Symfony provides so you can
+        // SymfonyStyle is an optional feature that Symfony provides, so you can
         // apply a consistent look to the commands of your application.
         // See https://symfony.com/doc/current/console/style.html
         $this->io = new SymfonyStyle($input, $output);

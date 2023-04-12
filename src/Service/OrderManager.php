@@ -170,7 +170,6 @@ class OrderManager
             ->setSellDate(null)
             ->setSellReason(null)
         ;
-        $this->entityManager->flush();
     }
 
     /**
@@ -204,7 +203,12 @@ class OrderManager
                 'symbol' => $symbolName,
                 'status' => $order->getStatus(),
             ];
-            $this->entityManager->remove($order);
+
+            if ($order->getStatus() === Order::STATUS_BUY) {
+                $this->entityManager->remove($order);
+            } else {
+                $this->unsold($order);
+            }
         }
 
         $this->entityManager->flush();

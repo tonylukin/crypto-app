@@ -46,9 +46,10 @@ class OrderController extends AbstractController
     }
     
     #[Route(path: '/admin/order/{id}/unsold', name: 'admin_order_unsold')]
-    public function unsold(Order $order, Request $request, OrderManager $orderManager): RedirectResponse
+    public function unsold(Order $order, Request $request, OrderManager $orderManager, EntityManagerInterface $entityManager): RedirectResponse
     {
         $orderManager->unsold($order);
+        $entityManager->flush();
         $this->addFlash(FlashBagTypes::INFO, 'Order unsold successfully');
 
         return $this->redirectToReturnUrl($request, 'admin_order_list');

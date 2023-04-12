@@ -71,7 +71,7 @@ class DashboardController extends AbstractController
     public function cronReport(Request $request, EntityManagerInterface $entityManager): Response
     {
         $sqlShowAll = $request->query->getBoolean('all') ? '' : 'LIMIT 30';
-        $sqlHideAccountNoMoney = $request->query->getBoolean('hide-no-money-logs') ? "AND error NOT LIKE '%insufficient balance%'" : '';
+        $sqlHideAccountNoMoney = $request->query->getBoolean('hide-no-money-logs') ? "AND (error NOT LIKE '%insufficient balance%' OR error NOT LIKE '%account-frozen-balance-insufficient-error%')" : '';
 
         $connection = $entityManager->getConnection();
         $sql = <<<SQL

@@ -24,12 +24,18 @@ class BestPriceAnalyzer
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 6;
 
     private ?string $reason = null;
+    private ApiInterface $api;
 
     public function __construct(
         private PriceRepository $priceRepository,
-        private ApiInterface $api,
         private LoggerInterface $logger,
-    ) {
+    ) {}
+
+    public function setApi(ApiInterface $api): static
+    {
+        $this->api = $api;
+
+        return $this;
     }
 
     public function getBestPriceForOrder(UserSymbol $userSymbol): ?float

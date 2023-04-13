@@ -28,6 +28,7 @@ class BestPriceAnalyzerTest extends KernelTestCase
         $this->apiMock = $this->createMock(ApiInterface::class);
         $container->set(API::class, $this->apiMock);
         $this->bestPriceAnalyzer = $container->get(BestPriceAnalyzer::class);
+        $this->bestPriceAnalyzer->setApi($this->apiMock);
         $symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $symbolRepository->getActiveList();
         $this->user = new User();

@@ -31,6 +31,7 @@ class OrderManager
     {
         $this->api = $api;
         $this->api->setCredentials($user);
+        $this->bestPriceAnalyzer->setApi($this->api);
 
         return $this;
     }

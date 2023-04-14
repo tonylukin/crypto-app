@@ -10,6 +10,7 @@ use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Event\BuyOrderCreatedEvent;
 use App\Event\SellOrderCreatedEvent;
+use App\Event\UnfilledOrderRejectedEvent;
 use App\Lib\Math;
 use App\Repository\OrderRepository;
 use App\Repository\SymbolRepository;
@@ -213,6 +214,7 @@ class OrderManager
             } else {
                 $this->unsold($order);
             }
+            $this->eventDispatcher->dispatch(new UnfilledOrderRejectedEvent($order));
         }
 
         $this->entityManager->flush();

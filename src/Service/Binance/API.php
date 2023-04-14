@@ -20,6 +20,7 @@ class API extends \Binance\API implements ApiInterface
     ) {
         parent::__construct('', '');
         $this->caOverride = true;
+        $this->useServerTime();
     }
 
     public function price(string $symbol): float
@@ -55,9 +56,6 @@ class API extends \Binance\API implements ApiInterface
         if ($user->getBinanceApiKey() && $user->getBinanceApiSecret()) {
             $this->api_key = $user->getBinanceApiKey();
             $this->api_secret = $this->encryptor->decrypt($user->getBinanceApiSecret());
-        }
-        if ($this->environmentId !== 'prod') {
-            $this->useServerTime();
         }
 
         return $this;

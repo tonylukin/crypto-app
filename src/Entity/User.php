@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\UserRepository;
 use App\Service\ExchangeCredentialsInterface;
+use App\Service\TelegramCredentialsInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -14,7 +15,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[UniqueEntity('username')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface, ExchangeCredentialsInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface, ExchangeCredentialsInterface, TelegramCredentialsInterface
 {
     public const ROLE_USER = 'ROLE_USER';
     public const ROLE_ADMIN = 'ROLE_ADMIN';
@@ -181,5 +182,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, Exchang
         $this->userSetting = $userSetting;
 
         return $this;
+    }
+
+    public function getToken(): ?string
+    {
+        return '6057642569:AAGBHg09GL_R4UYfWSJRv_a-yzC94lQJpF4';
+    }
+
+    public function getChatId(): ?int
+    {
+        return -983228694;
     }
 }

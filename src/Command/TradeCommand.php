@@ -37,7 +37,7 @@ class TradeCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setDescription('Main command for buy and sell currencies.')

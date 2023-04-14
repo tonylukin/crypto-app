@@ -26,10 +26,7 @@ class UserSettingType extends AbstractType
     {
         $builder
             ->add('useExchange', ChoiceType::class, [
-                'choices' => [
-                    'Binance' => Order::EXCHANGE_BINANCE,
-                    'Huobi' => Order::EXCHANGE_HUOBI,
-                ],
+                'choices' => array_flip(Order::EXCHANGE_LABELS),
                 'expanded' => true,
             ])
             ->add('disableTrading', CheckboxType::class, [

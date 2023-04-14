@@ -8,11 +8,14 @@ use App\Entity\Order;
 use App\Entity\Symbol;
 use App\Entity\User;
 use App\Entity\UserSymbol;
+use App\Event\BuyOrderCreatedEvent;
+use App\Event\SellOrderCreatedEvent;
 use App\Lib\Math;
 use App\Repository\OrderRepository;
 use App\Repository\SymbolRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 class OrderManager
 {
@@ -24,14 +27,14 @@ class OrderManager
         private BestPriceAnalyzer $bestPriceAnalyzer,
         private LoggerInterface $logger,
         private SymbolRepository $symbolRepository,
-    )
-    {}
+        private EventDispatcherInterface $eventDispatcher,
+    ) {}
 
     public function setApi(ApiInterface $api, ExchangeCredentialsInterface $user): self
     {
         $this->api = $api;
         $this->api->setCredentials($user);
-        $this->bestPriceAnalyzer->setApi($this->api);
+        $this->bestPriceAnalyzer->setApi($api);
 
         return $this;
     }
@@ -99,7 +102,7 @@ class OrderManager
             return false;
         }
 
-        $this->logger->info("Buy order created for {$price} {$userSymbol->getSymbol()->getName()}");
+        $this->eventDispatcher->dispatch(new BuyOrderCreatedEvent($order));
         return true;
     }
 
@@ -158,7 +161,7 @@ class OrderManager
             return false;
         }
 
-        $this->logger->info("Sell order created for {$price} {$userSymbol->getSymbol()->getName()}");
+        $this->eventDispatcher->dispatch(new SellOrderCreatedEvent($pendingOrder));
         return true;
     }
 

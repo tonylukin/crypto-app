@@ -85,7 +85,11 @@ class OrderManagerTest extends KernelTestCase
         $this->orderRepositoryMock
             ->expects($this->any())
             ->method('findPendingOrder')
-            ->willReturn((new Order())->setQuantity(374.8049)->setPrice(2.662))
+            ->willReturn((new Order())
+                ->setQuantity(374.8049)->setPrice(2.662)
+                ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+                ->setUser(current($this->users))
+            )
         ;
         $this->bestPriceAnalyzer
             ->expects($this->any())

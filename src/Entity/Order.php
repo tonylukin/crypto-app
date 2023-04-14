@@ -14,6 +14,10 @@ class Order
 {
     public const EXCHANGE_BINANCE = 1;
     public const EXCHANGE_HUOBI = 2;
+    public const EXCHANGE_LABELS = [
+        Order::EXCHANGE_BINANCE => 'Binance',
+        Order::EXCHANGE_HUOBI => 'Huobi',
+    ];
 
     public const STATUS_BUY = 'buy';
     public const STATUS_SELL = 'sale';
@@ -227,5 +231,10 @@ class Order
     public function isSold(): bool
     {
         return $this->status === self::STATUS_SELL;
+    }
+
+    public function getExchangeLabel(): ?string
+    {
+        return self::EXCHANGE_LABELS[$this->exchange] ?? null;
     }
 }

@@ -25,6 +25,11 @@ class API extends HuobiSpot implements ApiInterface
         parent::__construct();
     }
 
+    public function getExchange(): int
+    {
+        return Order::EXCHANGE_HUOBI;
+    }
+
     public function price(string $symbol): float
     {
         $symbol = strtolower($symbol);

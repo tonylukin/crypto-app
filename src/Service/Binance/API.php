@@ -23,6 +23,11 @@ class API extends \Binance\API implements ApiInterface
         $this->useServerTime();
     }
 
+    public function getExchange(): int
+    {
+        return Order::EXCHANGE_BINANCE;
+    }
+
     public function price(string $symbol): float
     {
         return (float) parent::price($symbol);

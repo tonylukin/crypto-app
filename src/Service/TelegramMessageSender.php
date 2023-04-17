@@ -9,6 +9,10 @@ class TelegramMessageSender
     private string $token = '6057642569:AAGBHg09GL_R4UYfWSJRv_a-yzC94lQJpF4';
     private int $chatId = -983228694;
 
+    public function __construct(
+        private string $environmentId,
+    ) {}
+
     public function setCredentials(TelegramCredentialsInterface $user): self
     {
         if ($user->getToken()) {
@@ -23,6 +27,10 @@ class TelegramMessageSender
 
     public function send(string $text): array
     {
+        if ($this->environmentId !== 'prod') {
+            return [];
+        }
+
         $textMessage = urlencode($text);
         $urlQuery = "https://api.telegram.org/bot{$this->token}/sendMessage?chat_id={$this->chatId}&text={$textMessage}";
 

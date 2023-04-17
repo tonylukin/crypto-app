@@ -75,6 +75,7 @@ class OrderManager
                 ->setQuantity($quantityAfterFee)
                 ->setBuyReason($this->bestPriceAnalyzer->getReason())
                 ->setUser($user)
+                ->setExchange($this->api->getExchange())
             ;
             $this->entityManager->persist($order);
             $this->entityManager->flush();

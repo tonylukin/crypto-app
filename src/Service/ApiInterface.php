@@ -20,4 +20,6 @@ interface ApiInterface
      * @return array<string, array{type: string, quantity: string}>
      */
     public function cancelUnfilledOrders(): array;
+
+    public function getExchange(): int;
 }

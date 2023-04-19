@@ -10,7 +10,7 @@ class UserSetting
 {
     private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 48; // 24 hours
     private const MIN_FALLEN_PRICE_PERCENTAGE = 5; // разница между максимальным значением за последнее время и текущим при достижении дна
-    private const FALLEN_PRICE_INTERVAL_HOURS = 24 * 5; // период для отчета максимального значения цены при падении, "последнее время" для константы выше
+    private const FALLEN_PRICE_INTERVAL_HOURS = 24 * 15; // период для отчета максимального значения цены при падении, "последнее время" для константы выше
     private const MINIMAL_PROFIT_PERCENT = 2;
     private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
     private const MIN_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;

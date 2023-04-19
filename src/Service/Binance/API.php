@@ -127,6 +127,11 @@ class API extends \Binance\API implements ApiInterface
                         'type' => $cancelResult['side'] === 'SELL' ? Order::STATUS_SELL : Order::STATUS_BUY,
                     ];
                 }
+            } else {
+                $output[strtoupper($row['symbol'])] = [
+                    'partialQuantity' => $row['executedQty'],
+                    'type' => $row['side'] === 'SELL' ? Order::STATUS_SELL : Order::STATUS_BUY,
+                ];
             }
         }
 

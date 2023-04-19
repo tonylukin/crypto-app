@@ -6,6 +6,7 @@ namespace App\EventSubscriber;
 
 use App\Entity\Order;
 use App\Event\BuyOrderCreatedEvent;
+use App\Event\PartialFilledOrderFoundEvent;
 use App\Event\SellOrderCreatedEvent;
 use App\Event\UnfilledOrderRejectedEvent;
 use App\Service\TelegramMessageSender;
@@ -26,6 +27,7 @@ class TelegramOrderSubscriber implements EventSubscriberInterface
             SellOrderCreatedEvent::class => 'onSellOrderCreated',
             ConsoleEvents::ERROR => 'onConsoleError',
             UnfilledOrderRejectedEvent::class => 'onUnfilledOrderRejected',
+            PartialFilledOrderFoundEvent::class => 'onPartialFilledOrderFound',
         ];
     }
 
@@ -56,6 +58,13 @@ class TelegramOrderSubscriber implements EventSubscriberInterface
         } else {
             $message = "Order for {$order->getSymbol()->getName()} with profit {$order->getProfit()} unsold [{$order->getExchangeLabel()}]";
         }
+        $this->telegramMessageSender->setCredentials($order->getUser())->send($message);
+    }
+
+    public function onPartialFilledOrderFound(PartialFilledOrderFoundEvent $event): void
+    {
+        $order = $event->getOrder();
+        $message = "Partially filled order found for {$order->getSymbol()->getName()} [{$order->getExchangeLabel()}]";
         $this->telegramMessageSender->setCredentials($order->getUser())->send($message);
     }
 }

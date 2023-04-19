@@ -9,6 +9,7 @@ use App\Entity\Symbol;
 use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Event\BuyOrderCreatedEvent;
+use App\Event\PartialFilledOrderFoundEvent;
 use App\Event\SellOrderCreatedEvent;
 use App\Event\UnfilledOrderRejectedEvent;
 use App\Lib\Math;
@@ -201,6 +202,11 @@ class OrderManager
             // todo let's look if there will be problems with it
             if ($order === null || $order->getStatus() !== $result[$symbolName]['type']) { //  && $order->getQuantity() !== $result[$symbolName]['quantity']
                 throw new \Exception("Last order has different status for '{$symbolName}' of order #{$order->getId()}");
+            }
+
+            if ($result[$symbolName]['partialQuantity'] ?? false) {
+                $this->eventDispatcher->dispatch(new PartialFilledOrderFoundEvent($order));
+                return [];
             }
 
             $output[] = [

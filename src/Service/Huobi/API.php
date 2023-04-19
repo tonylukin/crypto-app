@@ -150,6 +150,11 @@ class API extends HuobiSpot implements ApiInterface
                         'type' => $row['type'] === 'buy-limit' ? Order::STATUS_BUY : Order::STATUS_SELL,
                     ];
                 }
+            } else {
+                $output[strtoupper($row['symbol'])] = [
+                    'partialQuantity' => $row['filled-amount'],
+                    'type' => $row['type'] === 'buy-limit' ? Order::STATUS_BUY : Order::STATUS_SELL,
+                ];
             }
         }
 

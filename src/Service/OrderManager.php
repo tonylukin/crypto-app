@@ -205,7 +205,11 @@ class OrderManager
             }
 
             if ($result[$symbolName]['partialQuantity'] ?? false) {
-                $this->eventDispatcher->dispatch(new PartialFilledOrderFoundEvent($order));
+                if (!$order->isPartial()) {
+                    $this->eventDispatcher->dispatch(new PartialFilledOrderFoundEvent($order, $result[$symbolName]['partialQuantity']));
+                    $order->setPartial(true);
+                    $this->entityManager->flush();
+                }
                 return [];
             }
 

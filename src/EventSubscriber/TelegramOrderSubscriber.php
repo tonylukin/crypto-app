@@ -64,7 +64,8 @@ class TelegramOrderSubscriber implements EventSubscriberInterface
     public function onPartialFilledOrderFound(PartialFilledOrderFoundEvent $event): void
     {
         $order = $event->getOrder();
-        $message = "Partially filled order found for {$order->getSymbol()->getName()} [{$order->getExchangeLabel()}]";
+        $partialQuantityPercent = $event->getPartialQuantity() * 100;
+        $message = "Partially filled ({$partialQuantityPercent}%) order found for {$order->getSymbol()->getName()} [{$order->getExchangeLabel()}]";
         $this->telegramMessageSender->setCredentials($order->getUser())->send($message);
     }
 }

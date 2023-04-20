@@ -12,6 +12,7 @@ use App\Repository\OrderRepository;
 use App\Repository\SymbolRepository;
 use App\Repository\UserRepository;
 use App\Service\ApiFactory;
+use App\Service\ApiInterface;
 use App\Service\BestPriceAnalyzer;
 use App\Service\OrderManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,6 +33,7 @@ class OrderManagerTest extends KernelTestCase
     private null|\Doctrine\ORM\EntityManager $em;
     private OrderRepository $orderRepositoryMock;
     private ApiFactory $apiFactory;
+    private ApiInterface $apiMock;
 
     protected function setUp(): void
     {
@@ -48,6 +50,7 @@ class OrderManagerTest extends KernelTestCase
         $symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $symbolRepository->getActiveList();
         $this->apiFactory = $container->get(ApiFactory::class);
+        $this->apiMock = $this->createMock(ApiInterface::class);
 
         $this->em = $container->get(EntityManagerInterface::class);
         $this->em->getConnection()->beginTransaction();
@@ -113,5 +116,34 @@ class OrderManagerTest extends KernelTestCase
             $result = $this->orderManager->sell($userSymbol);
             self::assertTrue($result);
         }
+    }
+
+    public function testCancelUnfilledOrders(): void
+    {
+        $user = current($this->users);
+        $this->orderManager->setApi($this->apiMock, $user);
+        $this->apiMock
+            ->method('cancelUnfilledOrders')
+            ->willReturn([
+                PriceFixture::PRICE_TO_TOP_SYMBOL => [
+                    'type' => Order::STATUS_BUY,
+                    'partialQuantity' => 0.4025,
+                ],
+            ])
+        ;
+        $order = (new Order())
+            ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+            ->setPrice(11.11)
+            ->setQuantity(1)
+            ->setUser($user)
+        ;
+        $this->orderRepositoryMock
+            ->expects($this->once())
+            ->method('getLastOrder')
+            ->willReturn($order)
+        ;
+        $result = $this->orderManager->cancelUnfilledOrders($user);
+        $this->assertEmpty($result);
+        $this->assertTrue($order->isPartial());
     }
 }

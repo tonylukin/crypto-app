@@ -17,7 +17,7 @@ interface ApiInterface
     public function setCredentials(ExchangeCredentialsInterface $user): self;
 
     /**
-     * @return array<string, array{type: string, quantity: string, partialQuantity: string}>
+     * @return array<string, array{type: string, quantity: string, partialQuantity: float}>
      */
     public function cancelUnfilledOrders(): array;
 

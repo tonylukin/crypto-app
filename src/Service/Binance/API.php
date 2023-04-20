@@ -129,7 +129,7 @@ class API extends \Binance\API implements ApiInterface
                 }
             } else {
                 $output[strtoupper($row['symbol'])] = [
-                    'partialQuantity' => $row['executedQty'],
+                    'partialQuantity' => round($row['executedQty'] / $row['origQty'], 4),
                     'type' => $row['side'] === 'SELL' ? Order::STATUS_SELL : Order::STATUS_BUY,
                 ];
             }

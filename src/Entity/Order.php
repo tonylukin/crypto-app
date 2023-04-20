@@ -73,6 +73,10 @@ class Order
     #[Groups(['order_price_details'])]
     private User $user;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['order_price_details'])]
+    private bool $partial = false;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -236,5 +240,17 @@ class Order
     public function getExchangeLabel(): ?string
     {
         return self::EXCHANGE_LABELS[$this->exchange] ?? null;
+    }
+
+    public function isPartial(): bool
+    {
+        return $this->partial;
+    }
+
+    public function setPartial(bool $partial): self
+    {
+        $this->partial = $partial;
+
+        return $this;
     }
 }

@@ -10,10 +10,16 @@ class PartialFilledOrderFoundEvent
 {
     public function __construct(
         private Order $order,
+        private float $partialQuantity,
     ) {}
 
     public function getOrder(): Order
     {
         return $this->order;
+    }
+
+    public function getPartialQuantity(): float
+    {
+        return $this->partialQuantity;
     }
 }

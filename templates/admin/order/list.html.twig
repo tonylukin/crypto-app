@@ -46,7 +46,16 @@
                 {% set currentTotal = order.price * order.quantity %}
                 {% set percent = order.sellPrice ? (order.profit / order.sellPrice / order.quantity * 100)|round(2) : null %}
                 {% set currentDaysInterval = date(order.createdAt).diff(date(order.sellDate)).days + 1 %}
-                <tr class="{{ order.sold ? 'table-success' : (currentDaysInterval <= 7 ? 'table-warning' : 'table-danger') }}">
+                {% if order.sold %}
+                    {% set class = 'table-success' %}
+                {% else %}
+                    {% if order.partial %}
+                        {% set class = '' %}
+                    {% else %}
+                        {% set class = currentDaysInterval <= 7 ? 'table-warning' : 'table-danger' %}
+                    {% endif %}
+                {% endif %}
+                <tr class="{{ class }}">
                     <td><a href="{{ path('admin_order_view', {id: order.id}) }}">{{ order.id }}</a></td>
                     <td style="{{ order.symbol.userSymbols[0].active ? '' : 'text-decoration: line-through;' }}">{{ order.symbol.name }} [{{ order.symbol.id }}]</td>
                     <td>{{ order.createdAt|date('Y-m-d H:i') }}</td>

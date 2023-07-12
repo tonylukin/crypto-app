@@ -4,41 +4,54 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\LastPrice;
 use App\Entity\Order;
 use App\Entity\Symbol;
 use App\Entity\UserSymbol;
+use App\Repository\LastPriceRepository;
 use App\Repository\PriceRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
 class BestPriceAnalyzer
 {
-    private const PERCENT_VALUE_FOR_MIN_PRICE_ON_DISTANCE = 12;
     private const MIN_PERCENT_PRICE_DIFFERENCE_FOR_CHANGING_DIRECTION = 0.15;
+    // todo to ADDITIONAL settings
+    private const MAX_PERCENT_PRICE_DIFFERENCE_AFTER_LAST_PRICE_CANDIDATE = 1;
+    private const MAX_PERCENT_PRICE_DIFFERENCE_AFTER_LAST_MIN_PRICE_CANDIDATE = 3;
+    private const MAX_HOURS_LAST_PRICE_LIFETIME = 7 * 24;
 
     private const DIRECTION_PRICE_RISING_UP = 1;
     private const DIRECTION_PRICE_FALLING_DOWN = -1;
 
-    private const PRICE_MOVING_ON_SHORT_INTERVAL = 'Price moving on short interval';
     private const PRICE_RECENTLY_CHANGED_DIRECTION = 'Price recently changed direction';
 
     private const ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION = 6;
+    private const PERIOD_MINUTES_MULTIPLIER = 1.3; // важнейший коэффициент при определении периода графика
 
     private ?string $reason = null;
-    private ApiInterface $api;
+    private \DateTimeImmutable $currentDateTime;
 
     public function __construct(
         private PriceRepository $priceRepository,
         private LoggerInterface $logger,
-    ) {}
+        private LastPriceRepository $lastPriceRepository,
+        private EntityManagerInterface $entityManager,
+    ) {
+        $this->currentDateTime = new \DateTimeImmutable();
+    }
 
-    public function setApi(ApiInterface $api): static
+    /** for test purpose only */
+    public function setCurrentDateTime(\DateTimeImmutable $currentDateTime): BestPriceAnalyzer
     {
-        $this->api = $api;
-
+        $this->currentDateTime = $currentDateTime;
         return $this;
     }
 
-    public function getBestPriceForOrder(UserSymbol $userSymbol): ?float
+    /**
+     * @return null|array{0: float, 1: LastPrice}
+     */
+    public function getBestPriceForOrder(UserSymbol $userSymbol, float $currentPrice): ?array
     {
         // don't set order before some history obtained
         $pricesCount = $this->priceRepository->count(['symbol' => $userSymbol->getSymbol()]);
@@ -46,23 +59,111 @@ class BestPriceAnalyzer
             return null;
         }
 
-        $currentPrice = $this->api->price($userSymbol->getSymbol()->getName());
-        if ($this->isPriceOnFallingDown($userSymbol, $currentPrice)) {
+        $lastPrice = $this->lastPriceRepository->findOneBy([
+            'user' => $userSymbol->getUser(),
+            'symbol' => $userSymbol->getSymbol(),
+            'lowest' => true,
+        ]);
+
+        if ($lastPrice !== null && $lastPrice->getUpdatedAt()->modify(sprintf('+%d minutes', max($lastPrice->getPeriodMinutes(), 12 * 60))) <= $this->currentDateTime) {
+            if (
+                (($lastPrice->getMaxPrice() - $currentPrice) / $currentPrice * 100 > $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent())
+                &&
+                (
+                    abs($lastPrice->getPrice() - $currentPrice) / $currentPrice * 100 < self::MAX_PERCENT_PRICE_DIFFERENCE_AFTER_LAST_PRICE_CANDIDATE
+                    ||
+                    abs($lastPrice->getMinPrice() - $currentPrice) / $currentPrice * 100 < self::MAX_PERCENT_PRICE_DIFFERENCE_AFTER_LAST_MIN_PRICE_CANDIDATE
+                )
+            ) {
+                return [$currentPrice, $lastPrice];
+            }
+
+            // если не выгорело, начинаем сначала
+            $lastPrice
+                ->setPrice($currentPrice)
+                ->setUpdatedAt($this->currentDateTime)
+                ->increaseAttempt()
+            ;
+            $this->entityManager->flush();
             return null;
         }
 
-        if ($this->isPriceOnMovingRecentlyChangedDirection($userSymbol, $currentPrice, self::DIRECTION_PRICE_FALLING_DOWN)
-            || $this->isPriceOnRisingUp($userSymbol, $currentPrice)) {
-            return $currentPrice;
+        // должно быть изменение цены, тогда это вариант с дном
+        if ($this->compareDirectionWithLastPrice($userSymbol, $currentPrice, self::DIRECTION_PRICE_FALLING_DOWN)) {
+            // экспериментальная фича с определением максимума
+            if ($lastPrice !== null && bccomp((string) $currentPrice, (string) $lastPrice->getMaxPrice(), 6) > 0) {
+                $lastPrice
+                    ->setMaxPrice($currentPrice)
+//                    ->setUpdatedAt($this->currentDateTime)
+                ;
+                $this->entityManager->flush();
+            }
+            if ($lastPrice !== null && bccomp((string) $currentPrice, (string) $lastPrice->getMinPrice(), 6) < 0) {
+                $lastPrice
+                    ->setMinPrice($currentPrice)
+                    ->setUpdatedAt($this->currentDateTime)
+                ;
+                $this->calculatePeriodMinutes($lastPrice, $this->currentDateTime);
+                $this->entityManager->flush();
+            }
+
+            return null;
         }
 
+        if ($lastPrice === null) {
+            $lastPrice = (new LastPrice())
+                ->setUser($userSymbol->getUser())
+                ->setSymbol($userSymbol->getSymbol())
+                ->setLowest(true)
+                ->setPrice($currentPrice)
+                ->setMinPrice($currentPrice)
+                ->setMaxPrice($currentPrice)
+                ->setCreatedAt($this->currentDateTime)
+                ->setUpdatedAt($this->currentDateTime)
+                ->setPeriodDate($this->currentDateTime)
+            ;
+            $this->entityManager->persist($lastPrice);
+            $this->entityManager->flush();
+            return null;
+        }
+
+        if ($lastPrice->getUpdatedAt()->modify(sprintf('+%d hours', self::MAX_HOURS_LAST_PRICE_LIFETIME)) <= $this->currentDateTime) {
+            $this->entityManager->remove($lastPrice);
+            $this->entityManager->flush();
+            return null;
+        }
+
+        if (bccomp((string) $currentPrice, (string) $lastPrice->getPrice(), 6) < 0) {
+            // риск скатывания монеты по примеру LUNA, кроме того никакой логики остановки во время падения
+//            if (
+//                ($lastPrice->getMaxPrice() - $currentPrice) / $currentPrice * 100 > $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent() * 2
+//                &&
+//                ($lastPrice->getMinPrice() - $currentPrice) / $currentPrice * 100 < self::MAX_PERCENT_PRICE_DIFFERENCE_AFTER_LAST_MIN_PRICE_CANDIDATE
+//            ) {
+//                return [$currentPrice, $lastPrice];
+//            }
+
+            $lastPrice
+                ->setPrice($currentPrice)
+//                ->setUpdatedAt($this->currentDateTime)
+                ->increaseAttempt()
+            ;
+        }
+
+        $this->entityManager->flush();
         return null;
     }
 
-    public function getBestPriceForSell(UserSymbol $userSymbol): ?float
+    // true - совпадает
+    private function compareDirectionWithLastPrice(UserSymbol $userSymbol, float $price, int $direction): bool
     {
-        $currentPrice = $this->api->price($userSymbol->getSymbol()->getName());
+        $priceEntity = $this->priceRepository->getLastItem($userSymbol->getSymbol(), $this->currentDateTime);
+        return ($price - $priceEntity?->getPrice()) * $direction > 0;
+    }
 
+    public function getBestPriceForSell(UserSymbol $userSymbol, float $currentPrice): ?float
+    {
+        // todo выносим логику выше в метод и используем здесь
         if ($this->isPriceOnMovingRecentlyChangedDirection($userSymbol, $currentPrice, self::DIRECTION_PRICE_RISING_UP)) {
             return $currentPrice;
         }
@@ -81,7 +182,8 @@ class BestPriceAnalyzer
             ->priceRepository
             ->getLastItemsForInterval(
                 new \DateInterval($interval),
-                $userSymbol->getSymbol()
+                $userSymbol->getSymbol(),
+                currentDateTime: $this->currentDateTime,
             )
         ;
         if (count($priceEntities) > self::ITEMS_COUNT_FOR_CHECKING_CHANGED_DIRECTION) {
@@ -109,37 +211,6 @@ class BestPriceAnalyzer
             // сначала одинаковые знаки у направления и изменения цены, плато тоже подходит
             $result = $currentDiff * $direction >= 0;
 
-            // если падение от цены недостаточное по отношению к максимальной цене за последнее время, то прерываем
-            if ($direction === self::DIRECTION_PRICE_FALLING_DOWN) {
-                $lastHighPrice = $this->priceRepository->getLastHighPrice(
-                    $userSymbol->getSymbol(),
-                    new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getFallenPriceIntervalHours())),
-                );
-                $lastMinPrice = $this->priceRepository->getLastMinPrice(
-                    $userSymbol->getSymbol(),
-                    new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getFallenPriceIntervalHours())),
-                );
-                $minFallenPricePercent = $userSymbol->getUser()->getUserSetting()->getMinFallenPricePercent();
-                // для ситуаций, когда происходит скачок цены, мы пытаемся высчитать коэф-т, который может увеличить наш минимальный процент падения,
-                // но только увеличить! В случае если там разница меньше нашего мин. падения, этот коэф-т =1
-                $bottomToTopPercent = ($lastHighPrice - $lastMinPrice) / $lastMinPrice * 100;
-                // здесь мы смотрим, чтобы наш коэф-т падения (в процентах) не был больше ДВОЙНОГО разрешенного падения
-                // двойного потому, что мы смотри различие между низом и верхом. Норму можно получить делением пополам
-                $minFallenPricePercent = $bottomToTopPercent > 1.8 * $minFallenPricePercent ? $bottomToTopPercent : $minFallenPricePercent;
-                if (($lastHighPrice - $price) / $price * 100 < $minFallenPricePercent) {
-                    return false;
-                }
-
-                // смотрим, чтобы эти падения не были на самих хаях
-                $minDiff = $price - $this->priceRepository->getLastMinPrice(
-                    $userSymbol->getSymbol(),
-                    new \DateInterval(sprintf('P%dD', $userSymbol->getUser()->getUserSetting()->getDaysIntervalMinPriceOnDistance()))
-                );
-                if ($minDiff / $price * 100 > self::PERCENT_VALUE_FOR_MIN_PRICE_ON_DISTANCE) {
-                    return false;
-                }
-            }
-
             $currentDiff = $price - $lastPrice;
 
             // последняя итерация
@@ -165,45 +236,6 @@ class BestPriceAnalyzer
         return $result;
     }
 
-    private function isPriceOnRisingUp(UserSymbol $userSymbol, float $price): bool
-    {
-        return $this->isPriceMovingOnShortInterval($userSymbol, $price, self::DIRECTION_PRICE_RISING_UP);
-    }
-
-    private function isPriceOnFallingDown(UserSymbol $userSymbol, float $price): bool
-    {
-        return $this->isPriceMovingOnShortInterval($userSymbol, $price, self::DIRECTION_PRICE_FALLING_DOWN);
-    }
-
-    private function isPriceMovingOnShortInterval(UserSymbol $userSymbol, float $price, int $direction): bool
-    {
-        if (!$userSymbol->isRiskable() && $direction === self::DIRECTION_PRICE_RISING_UP) {
-            return false;
-        }
-        $avgPriceShortInterval = $this
-            ->priceRepository
-            ->getAvgForInterval(
-                new \DateInterval(sprintf('PT%dH', $userSymbol->getUser()->getUserSetting()->getHoursExtremelyShortIntervalForPrices())),
-                $userSymbol->getSymbol()
-            )
-        ;
-        if (!$this->checkDirection($userSymbol, $price, $direction)) {
-            return false;
-        }
-
-        $diffPercent = abs($price - $avgPriceShortInterval) / $price * 100;
-        if ($diffPercent < $userSymbol->getUser()->getUserSetting()->getMaxPercentDiffOnMoving()) {
-            // very small difference
-            return false;
-        }
-
-        // записываем причину только для повышения (они же только рисковые), поскольку тут произойдет покупка
-        if ($direction === self::DIRECTION_PRICE_RISING_UP) {
-            $this->reason = $this->buildReason(self::PRICE_MOVING_ON_SHORT_INTERVAL, $price, $userSymbol->getSymbol(), $direction);
-        }
-        return true;
-    }
-
     /**
      * @return bool Если true, то direction совпадает с направлением роста/падения валюты
      */
@@ -214,17 +246,18 @@ class BestPriceAnalyzer
 //            ->priceRepository
 //            ->getAvgForInterval(
 //                new \DateInterval($interval),
-//                $userSymbol->getSymbol()
+//                $userSymbol->getSymbol(),
+//                currentDateTime: $this->currentDateTime,
 //            )
 //        ;
 //        return ($price - $avgPriceShortInterval) * $direction > 0;
 //    }
 
-    public function getPriceProfit(Order $pendingOrder, float $possibleSalePrice): ?float
+    public function getPriceProfit(Order $pendingOrder, float $possibleSalePrice, float $feeMultiplier): ?float
     {
         $expenses = $pendingOrder->getPrice() * $pendingOrder->getQuantity();
         $profit = ($possibleSalePrice - $pendingOrder->getPrice()) * $pendingOrder->getQuantity();
-        $exchangeFee = $possibleSalePrice * $pendingOrder->getQuantity() * $this->api->getFeeMultiplier(true);
+        $exchangeFee = $possibleSalePrice * $pendingOrder->getQuantity() * $feeMultiplier;
         $profit -= $exchangeFee;
 
         if ($profit < 0) {
@@ -232,7 +265,7 @@ class BestPriceAnalyzer
         }
 
         $maxDaysWaitingForProfit = $pendingOrder->getUser()->getUserSetting()->getMaxDaysWaitingForProfit();
-        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', $maxDaysWaitingForProfit)) <= new \DateTimeImmutable()) {
+        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', $maxDaysWaitingForProfit)) <= $this->currentDateTime) {
             $this->logger->warning("Was waiting too long for profit, sold after {$maxDaysWaitingForProfit} days: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}", [
                 'user' => $pendingOrder->getUser()->getUserIdentifier(),
             ]);
@@ -240,7 +273,7 @@ class BestPriceAnalyzer
         }
 
         $profitPercent = $profit / $expenses * 100;
-        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', ceil($maxDaysWaitingForProfit / 2))) <= new \DateTimeImmutable()
+        if ($pendingOrder->getCreatedAt()->modify(sprintf('+%d days', ceil($maxDaysWaitingForProfit / 2))) <= $this->currentDateTime
             && $profitPercent >= $pendingOrder->getUser()->getUserSetting()->getMinProfitPercent() / 2) {
             $this->logger->warning("Sold after a half of max interval: {$pendingOrder->getQuantity()} [{$pendingOrder->getSymbol()->getName()}] with profit {$profit}", [
                 'user' => $pendingOrder->getUser()->getUserIdentifier(),
@@ -275,7 +308,8 @@ class BestPriceAnalyzer
             ->priceRepository
             ->getLastItemsForInterval(
                 new \DateInterval($interval),
-                $userSymbol->getSymbol()
+                $userSymbol->getSymbol(),
+                currentDateTime: $this->currentDateTime,
             )
         ;
         $lastPrice = $price;
@@ -292,5 +326,14 @@ class BestPriceAnalyzer
         $directionMultiplier = $positiveDiff > abs($negativeDiff);
 
         return $directionMultiplier * $direction > 0;
+    }
+
+    private function calculatePeriodMinutes(LastPrice $lastPrice, \DateTimeImmutable $currentDateTime): void
+    {
+        $periodMinutes = $lastPrice->getPeriodDate() !== null ? (int) floor(($currentDateTime->getTimestamp() - $lastPrice->getPeriodDate()->getTimestamp()) / 60) : 0;
+        if ($periodMinutes > 0) {
+            $lastPrice->setPeriodMinutes(max($lastPrice->getPeriodMinutes(), (int) round($periodMinutes * self::PERIOD_MINUTES_MULTIPLIER)));
+        }
+        $lastPrice->setPeriodDate($currentDateTime);
     }
 }

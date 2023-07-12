@@ -27,6 +27,12 @@ class UserSymbol
     #[ORM\ManyToOne(targetEntity: User::class)]
     private ?User $user = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?float $upperThreshold = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?float $lowerThreshold = null;
+
     public function isActive(): bool
     {
         return $this->active;
@@ -83,6 +89,30 @@ class UserSymbol
     public function setUser(User $user): self
     {
         $this->user = $user;
+        return $this;
+    }
+
+    public function getUpperThreshold(): ?float
+    {
+        return $this->upperThreshold;
+    }
+
+    public function setUpperThreshold(?float $upperThreshold): self
+    {
+        $this->upperThreshold = $upperThreshold;
+
+        return $this;
+    }
+
+    public function getLowerThreshold(): ?float
+    {
+        return $this->lowerThreshold;
+    }
+
+    public function setLowerThreshold(?float $lowerThreshold): self
+    {
+        $this->lowerThreshold = $lowerThreshold;
+
         return $this;
     }
 }

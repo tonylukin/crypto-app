@@ -43,11 +43,17 @@ class PriceRepository extends ServiceEntityRepository
     /**
      * @return Price[]
      */
-    public function getLastItemsForInterval(\DateInterval $dateInterval, ?Symbol $symbol = null, string $sortDirection = 'ASC'): array
-    {
+    public function getLastItemsForInterval(
+        \DateInterval $dateInterval,
+        ?Symbol $symbol = null,
+        string $sortDirection = 'ASC',
+        \DateTimeImmutable $currentDateTime = new \DateTimeImmutable(),
+    ): array {
         $qb = $this->createQueryBuilder('price')
-            ->where('price.datetime >= :dateTime')
-            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->where('price.datetime >= :startDateTime')
+            ->setParameter('startDateTime', $currentDateTime->sub($dateInterval))
+            ->andWhere('price.datetime <= :endDateTime')
+            ->setParameter('endDateTime', $currentDateTime)
             ->orderBy('price.datetime', $sortDirection)
             ->addOrderBy('price.symbol')
         ;
@@ -61,12 +67,14 @@ class PriceRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getAvgForInterval(\DateInterval $dateInterval, Symbol $symbol): ?float
+    public function getAvgForInterval(\DateInterval $dateInterval, Symbol $symbol, \DateTimeImmutable $currentDateTime = new \DateTimeImmutable()): ?float
     {
         $qb = $this->createQueryBuilder('price')
             ->select('AVG(price.price) AS avgPrice')
-            ->where('price.datetime >= :dateTime')
-            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->where('price.datetime >= :startDateTime')
+            ->setParameter('startDateTime', $currentDateTime->sub($dateInterval))
+            ->andWhere('price.datetime <= :endDateTime')
+            ->setParameter('endDateTime', $currentDateTime)
             ->andWhere('price.symbol = :symbol')
             ->setParameter('symbol', $symbol)
         ;
@@ -109,12 +117,14 @@ class PriceRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    public function getLastHighPrice(Symbol $symbol, \DateInterval $dateInterval): ?float
+    public function getLastHighPrice(Symbol $symbol, \DateInterval $dateInterval, \DateTimeImmutable $currentDateTime = new \DateTimeImmutable()): ?float
     {
         $qb = $this->createQueryBuilder('price')
             ->select('MAX(price.price) AS highPrice')
-            ->where('price.datetime >= :dateTime')
-            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->where('price.datetime >= :startDateTime')
+            ->setParameter('startDateTime', $currentDateTime->sub($dateInterval))
+            ->andWhere('price.datetime <= :endDateTime')
+            ->setParameter('endDateTime', $currentDateTime)
             ->andWhere('price.symbol = :symbol')
             ->setParameter('symbol', $symbol)
         ;
@@ -122,16 +132,31 @@ class PriceRepository extends ServiceEntityRepository
         return $qb->getQuery()->getSingleScalarResult();
     }
 
-    public function getLastMinPrice(Symbol $symbol, \DateInterval $dateInterval): ?float
+    public function getLastMinPrice(Symbol $symbol, \DateInterval $dateInterval, \DateTimeImmutable $currentDateTime = new \DateTimeImmutable()): ?float
     {
         $qb = $this->createQueryBuilder('price')
             ->select('MIN(price.price) AS minPrice')
-            ->where('price.datetime >= :dateTime')
-            ->setParameter('dateTime', (new \DateTimeImmutable())->sub($dateInterval))
+            ->where('price.datetime >= :startDateTime')
+            ->setParameter('startDateTime', $currentDateTime->sub($dateInterval))
+            ->andWhere('price.datetime <= :endDateTime')
+            ->setParameter('endDateTime', $currentDateTime)
             ->andWhere('price.symbol = :symbol')
             ->setParameter('symbol', $symbol)
         ;
 
         return $qb->getQuery()->getSingleScalarResult();
+    }
+
+    public function getLastItem(Symbol $symbol, \DateTimeImmutable $currentDateTime): ?Price
+    {
+        $qb = $this->createQueryBuilder('price')
+            ->orderBy('price.datetime', 'desc')
+            ->andWhere('price.datetime < :dateTime')
+            ->setParameter('dateTime', $currentDateTime)
+            ->andWhere('price.symbol = :symbol')
+            ->setParameter('symbol', $symbol)
+            ->setMaxResults(1)
+        ;
+        return $qb->getQuery()->getOneOrNullResult();
     }
 }

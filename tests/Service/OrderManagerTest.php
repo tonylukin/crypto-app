@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\DataFixtures\PriceFixture;
+use App\Entity\LastPrice;
 use App\Entity\Order;
 use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Repository\OrderRepository;
 use App\Repository\SymbolRepository;
 use App\Repository\UserRepository;
-use App\Service\ApiFactory;
 use App\Service\ApiInterface;
 use App\Service\BestPriceAnalyzer;
 use App\Service\OrderManager;
@@ -32,7 +32,6 @@ class OrderManagerTest extends KernelTestCase
     private array $users;
     private null|\Doctrine\ORM\EntityManager $em;
     private OrderRepository $orderRepositoryMock;
-    private ApiFactory $apiFactory;
     private ApiInterface $apiMock;
 
     protected function setUp(): void
@@ -49,9 +48,11 @@ class OrderManagerTest extends KernelTestCase
         $this->users = $userRepository->findAll();
         $symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $symbolRepository->getActiveList();
-        $this->apiFactory = $container->get(ApiFactory::class);
         $this->apiMock = $this->createMock(ApiInterface::class);
-
+        $this->apiMock
+            ->method('price')
+            ->willReturn(22.22)
+        ;
         $this->em = $container->get(EntityManagerInterface::class);
         $this->em->getConnection()->beginTransaction();
     }
@@ -62,35 +63,49 @@ class OrderManagerTest extends KernelTestCase
         parent::tearDown();
     }
 
-    public function testBuy(): void
+    /**
+     * @dataProvider buyProvider
+     */
+    public function testBuy(float $lowerThreshold, bool $expectedResult): void
     {
         $this->bestPriceAnalyzer
             ->expects($this->any())
             ->method('getBestPriceForOrder')
-            ->willReturn(22.22)
+            ->willReturn([22.22, new LastPrice()])
         ;
         foreach ($this->users as $user) {
             $userSymbol = (new UserSymbol())
-                ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+                ->setSymbol($this->symbols[PriceFixture::BTC_REAL_MOVING_SYMBOL])
                 ->setUser($user)
+                ->setLowerThreshold($lowerThreshold)
             ;
             $this->orderManager->setApi(
-                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange()),
+                $this->apiMock,
                 $user
             );
             $result = $this->orderManager->buy($userSymbol, 5);
-            self::assertTrue($result);
+            self::assertSame($expectedResult, $result);
         }
     }
 
-    public function testSell(): void
+    public function buyProvider(): \Generator
+    {
+        yield [22.23, true];
+        yield [22.21, false];
+    }
+
+    /**
+     * @dataProvider sellProvider
+     */
+    public function testSell(float $upperThreshold, bool $expectedResult): void
     {
         $this->orderRepositoryMock
             ->expects($this->any())
             ->method('findPendingOrder')
             ->willReturn((new Order())
-                ->setQuantity(374.8049)->setPrice(2.662)
-                ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+                ->setQuantity(374.8049)
+                ->setPrice(2.662)
+                ->setSymbol($this->symbols[PriceFixture::BTC_REAL_MOVING_SYMBOL])
                 ->setUser(current($this->users))
             )
         ;
@@ -106,16 +121,23 @@ class OrderManagerTest extends KernelTestCase
         ;
         foreach ($this->users as $user) {
             $userSymbol = (new UserSymbol())
-                ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+                ->setSymbol($this->symbols[PriceFixture::BTC_REAL_MOVING_SYMBOL])
                 ->setUser($user)
+                ->setUpperThreshold($upperThreshold)
             ;
             $this->orderManager->setApi(
-                $this->apiFactory->build($userSymbol->getUser()->getUserSetting()->getUseExchange()),
+                $this->apiMock,
                 $user
             );
             $result = $this->orderManager->sell($userSymbol);
-            self::assertTrue($result);
+            self::assertSame($expectedResult, $result);
         }
+    }
+
+    public function sellProvider(): \Generator
+    {
+        yield [2.9619999, true];
+        yield [2.962, false];
     }
 
     public function testCancelUnfilledOrders(): void
@@ -125,14 +147,14 @@ class OrderManagerTest extends KernelTestCase
         $this->apiMock
             ->method('cancelUnfilledOrders')
             ->willReturn([
-                PriceFixture::PRICE_TO_TOP_SYMBOL => [
+                PriceFixture::BTC_REAL_MOVING_SYMBOL => [
                     'type' => Order::STATUS_BUY,
                     'partialQuantity' => 0.4025,
                 ],
             ])
         ;
         $order = (new Order())
-            ->setSymbol($this->symbols[PriceFixture::PRICE_TO_TOP_SYMBOL])
+            ->setSymbol($this->symbols[PriceFixture::BTC_REAL_MOVING_SYMBOL])
             ->setPrice(11.11)
             ->setQuantity(1)
             ->setUser($user)

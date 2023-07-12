@@ -35,6 +35,7 @@ class PriceSaver
                 ->setPrice($priceValue)
                 ->setSymbol($symbol)
                 ->setDatetime($dateTime)
+                ->setExchange($this->api->getExchange())
             ;
             $this->entityManager->persist($price);
             $logs[] = "Symbol '{$symbol->getName()}' price saved";

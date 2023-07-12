@@ -36,7 +36,6 @@ class OrderManager
     {
         $this->api = $api;
         $this->api->setCredentials($user);
-        $this->bestPriceAnalyzer->setApi($api);
 
         return $this;
     }
@@ -52,8 +51,13 @@ class OrderManager
             return false;
         }
 
-        $price = $this->bestPriceAnalyzer->getBestPriceForOrder($userSymbol);
+        $price = $this->bestPriceAnalyzer->getBestPriceForOrder($userSymbol, $this->api->price($userSymbol->getSymbol()->getName()));
         if ($price === null) {
+            return false;
+        }
+        [$price, $lastPrice] = $price;
+
+        if ($userSymbol->getLowerThreshold() && bccomp((string) $price, (string) $userSymbol->getLowerThreshold(), 6) >= 0) {
             return false;
         }
 
@@ -79,6 +83,7 @@ class OrderManager
                 ->setExchange($this->api->getExchange())
             ;
             $this->entityManager->persist($order);
+            $this->entityManager->remove($lastPrice);
             $this->entityManager->flush();
 
             $response = $this->api->buyLimit($userSymbol->getSymbol()->getName(), $quantityBeforeFee, $price);
@@ -120,12 +125,16 @@ class OrderManager
             return false;
         }
 
-        $price = $this->bestPriceAnalyzer->getBestPriceForSell($userSymbol);
+        $price = $this->bestPriceAnalyzer->getBestPriceForSell($userSymbol, $this->api->price($userSymbol->getSymbol()->getName()));
         if ($price === null) {
             return false;
         }
 
-        $profit = $this->bestPriceAnalyzer->getPriceProfit($pendingOrder, $price);
+        if ($userSymbol->getUpperThreshold() && bccomp((string) $price, (string) $userSymbol->getUpperThreshold(), 6) <= 0) {
+            return false;
+        }
+
+        $profit = $this->bestPriceAnalyzer->getPriceProfit($pendingOrder, $price, $this->api->getFeeMultiplier(true));
         if ($profit === null) {
             return false;
         }
@@ -199,7 +208,7 @@ class OrderManager
         $output = [];
         foreach ($symbolNames as $symbolName) {
             $order = $this->orderRepository->getLastOrder($user, $symbols[$symbolName]);
-            // todo let's look if there will be problems with it
+            // let's look if there will be problems with it
             if ($order === null || $order->getStatus() !== $result[$symbolName]['type']) { //  && $order->getQuantity() !== $result[$symbolName]['quantity']
                 throw new \Exception("Last order has different status for '{$symbolName}' of order #{$order->getId()}");
             }

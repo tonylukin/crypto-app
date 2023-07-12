@@ -9,9 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 class UserSetting
 {
     private const MIN_PRICES_COUNT_MUST_HAVE_BEFORE_ORDER = 48; // 24 hours
-    private const MIN_FALLEN_PRICE_PERCENTAGE = 5; // разница между максимальным значением за последнее время и текущим при достижении дна
+    private const MIN_FALLEN_PRICE_PERCENTAGE = 10; // разница между максимальным значением за последнее время и текущим при достижении дна
     private const FALLEN_PRICE_INTERVAL_HOURS = 24 * 15; // период для отчета максимального значения цены при падении, "последнее время" для константы выше
-    private const MINIMAL_PROFIT_PERCENT = 2;
+    private const MINIMAL_PROFIT_PERCENT = 5;
     private const MAX_DAYS_WAITING_FOR_PROFIT = 40;
     private const MIN_PRICE_DIFF_PERCENT_AFTER_LAST_SELL = 8;
     private const MAX_PERCENT_DIFF_ON_MOVING = 3;
@@ -75,6 +75,9 @@ class UserSetting
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $huobiApiSecret = null;
+
+    #[ORM\Column(nullable: true, type: 'json')]
+    private ?array $additionalSettings = null;
 
     public function getId(): ?int
     {
@@ -281,6 +284,17 @@ class UserSetting
     {
         $this->huobiApiSecret = $huobiApiSecret;
 
+        return $this;
+    }
+
+    public function getAdditionalSettings(): ?array
+    {
+        return $this->additionalSettings;
+    }
+
+    public function setAdditionalSettings(?array $additionalSettings): UserSetting
+    {
+        $this->additionalSettings = $additionalSettings;
         return $this;
     }
 }

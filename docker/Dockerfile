@@ -5,6 +5,7 @@ RUN apt-get update \
     && docker-php-ext-configure intl \
     && docker-php-ext-install intl \
     && apt-get -y install cron \
+    && docker-php-ext-install bcmath \
     && apt-get install -y git zip libpq-dev \
 #    && pecl install xdebug \
 #    && docker-php-ext-enable xdebug \

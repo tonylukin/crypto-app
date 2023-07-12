@@ -5,105 +5,136 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\DataFixtures\PriceFixture;
+use App\Entity\Price;
 use App\Entity\User;
 use App\Entity\UserSymbol;
 use App\Repository\SymbolRepository;
 use App\Service\ApiInterface;
 use App\Service\BestPriceAnalyzer;
 use App\Service\Binance\API as API;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 class BestPriceAnalyzerTest extends KernelTestCase
 {
     private ?BestPriceAnalyzer $bestPriceAnalyzer;
-    private ApiInterface $apiMock;
     private array $symbols;
     private User $user;
+    private \App\Repository\PriceRepository $priceRepository;
+    private EntityManagerInterface $em;
 
     protected function setUp(): void
     {
         parent::setUp();
         self::bootKernel();
         $container = static::getContainer();
-        $this->apiMock = $this->createMock(ApiInterface::class);
-        $container->set(API::class, $this->apiMock);
+        $apiMock = $this->createMock(ApiInterface::class);
+        $container->set(API::class, $apiMock);
         $this->bestPriceAnalyzer = $container->get(BestPriceAnalyzer::class);
-        $this->bestPriceAnalyzer->setApi($this->apiMock);
         $symbolRepository = $container->get(SymbolRepository::class);
         $this->symbols = $symbolRepository->getActiveList();
-        $this->user = new User();
+        $this->user = (new User())
+            ->setUsername(uniqid('user'))
+            ->setPassword('1')
+        ;
         $this->user->getUserSetting()->setMinPricesCountMustHaveBeforeOrder(6);
+        $this->em = $container->get(EntityManagerInterface::class);
+        $this->em->persist($this->user);
+        $this->priceRepository = $this->em->getRepository(Price::class);
+        $this->em->getConnection()->beginTransaction();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->em->getConnection()->rollBack();
+        parent::tearDown();
     }
 
     /**
-     * @dataProvider priceForOrderProvider
+     * @dataProvider priceForOrderWithMovingProvider
      */
-    public function testGetBestPriceForOrder(float $price, string $symbol, bool $resultIsNotNull): void
-    {
-        $this->apiMock
-            ->expects($this->any())
-            ->method('price')
-            ->willReturn($price)
-        ;
+    public function testGetBestPriceForOrderWithMoving(
+        string $startDateFormat,
+        ?string $endDateFormat,
+        string $symbol,
+        ?float $bestPriceForOrder,
+        bool $strict = false,
+    ): void {
+        ini_set('memory_limit', '2G');
+        $startDate = new \DateTimeImmutable($startDateFormat);
+        $endDate = $endDateFormat !== null ? new \DateTimeImmutable($endDateFormat) : $startDate->modify('+2 weeks');
+        $interval = '+10 minutes';
         $userSymbol = (new UserSymbol())
             ->setSymbol($this->symbols[$symbol])
             ->setUser($this->user)
         ;
-        $result = $this->bestPriceAnalyzer->getBestPriceForOrder($userSymbol);
-        if ($resultIsNotNull) {
-            self::assertSame($price, $result);
-        } else {
-            self::assertNull($result);
+        while (true) {
+            $price = $this->priceRepository->findOneBy([
+                'datetime' => $startDate,
+                'symbol' => $userSymbol->getSymbol(),
+            ]);
+            if ($price !== null) {
+                $this->bestPriceAnalyzer->setCurrentDateTime($startDate);
+                $result = $this->bestPriceAnalyzer->getBestPriceForOrder($userSymbol, $price->getPrice() * 1.000);
+
+                if ($strict) {
+                    if ($startDate >= $endDate) {
+                        if ($result !== null) {
+                            self::assertSame($bestPriceForOrder, $result[0]);
+                        } else {
+                            self::assertNull($bestPriceForOrder);
+                        }
+                        return;
+                    } elseif ($result !== null) {
+                        self::assertNull($result[0], 'Test failed because value comes before end date');
+                        return;
+                    }
+                } else {
+                    if ($endDateFormat !== null) {
+                        if ($startDate >= $endDate) {
+                            if ($result !== null) {
+                                self::assertSame($bestPriceForOrder, $result[0]);
+                            } else {
+                                self::assertNull($bestPriceForOrder);
+                            }
+                            return;
+                        }
+                    } else {
+                        if ($result !== null) {
+                            self::assertSame($bestPriceForOrder, $result[0]);
+                            return;
+                        }
+                        if ($startDate >= $endDate) {
+                            self::assertNull($bestPriceForOrder);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            if ($startDate >= $endDate) {
+                self::assertNull($bestPriceForOrder);
+                return;
+            }
+
+            $startDate = $startDate->modify($interval);
         }
     }
 
-    public function priceForOrderProvider(): \Generator
+    public function priceForOrderWithMovingProvider(): \Generator
     {
-        yield [28.49, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, false]; // price is not match because 43% diff between highest and lowest prices
-        yield [36.8, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is on a top
-        yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // price is not match because is rising up after falling
-        yield [1596.09, PriceFixture::NOT_RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is not changed direction
-        yield [1599.09, PriceFixture::RECENTLY_CHANGED_PRICE_SYMBOL, false]; // price is not match because is changed direction but step it too big
-        yield [1.7, PriceFixture::TWT_RISING_ON_INTERVAL_AND_THEN_FALLING_ON_DISTANCE_SYMBOL, false]; // цена растет после падения, НО это происходит на хаях относительно предыдущего движения. НЕ БЕРЕМ
-        yield [1.129, PriceFixture::MINA_FALLING_AFTER_RISING_WITH_BIG_DIFF_BETWEEN_HIGH_AND_LOW_SYMBOL, false]; // цена падает после падения, НО, оглядываясь назад, мы видим, что там огромная разница между мин и макс значениями цены, поэтому высчитывается минимальный коэф-т для процента мин цены
-        yield [27658.28, PriceFixture::BTC_RISE_THEN_FALL_SYMBOL, true]; // цена битка падает в заданном интервале (5%)
-        yield [2.041, PriceFixture::UMA_SMALL_FALLING_DOWN_SYMBOL, true]; // нормальное падение, нормальная цена
-        yield [27743.97, PriceFixture::BTC_RISE_THEN_FALL_2_SYMBOL, false]; // нормальное падение, нормальная цена, но чуток не дотягивает до 5% -> 4.8%
-    }
-
-    /**
-     * @dataProvider priceForSaleProvider
-     */
-    public function testGetBestPriceForSale(float $price, string $symbol, bool $resultIsNotNull): void
-    {
-        $this->apiMock
-            ->expects($this->any())
-            ->method('price')
-            ->willReturn($price)
-        ;
-        $userSymbol = (new UserSymbol())
-            ->setSymbol($this->symbols[$symbol])
-            ->setUser($this->user)
-        ;
-        $result = $this->bestPriceAnalyzer->getBestPriceForSell($userSymbol);
-        if ($resultIsNotNull) {
-            self::assertSame($price, $result);
-        } else {
-            self::assertNull($result);
-        }
-    }
-
-    public function priceForSaleProvider(): \Generator
-    {
-        // avg price = 37.29, last price = 37.13
-        yield [37.36, PriceFixture::PRICE_TO_TOP_SYMBOL, true]; // берем, цена на пике упала
-        yield [43.0, PriceFixture::PRICE_TO_TOP_SYMBOL, false]; // не берем, цена растет
-        // avg price = , last price = 28.49
-        yield [35, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, false]; // price is not match because is still rising up
-        yield [29.5, PriceFixture::PRICE_TO_BOTTOM_SYMBOL, false]; // price is not match because is rising up
-        // avg price = , last price = 1082.77
-        yield [1080, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, true]; // falling down -> sell
-        yield [1090, PriceFixture::PRICE_TOP_BOTTOM_TOP_SYMBOL, false]; // rising up -> not sell
-        yield [0.370, PriceFixture::RECENTLY_CHANGED_PRICE_WITH_PLATO_SYMBOL, true]; // price is match because is changed direction with a plato (real case)
+        yield ['2023-03-26 00:08', null, PriceFixture::BTC_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-04-14 00:08', '2023-04-26 22:08', PriceFixture::UMA_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-04-19 23:28', null, PriceFixture::UMA_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-04-16 23:28', '2023-04-23 17:38', PriceFixture::SOL_REAL_MOVING_SYMBOL, 21.51, true];
+        yield ['2023-04-16 00:28', '2023-04-30 01:58', PriceFixture::MATIC_REAL_MOVING_SYMBOL, 0.991, true];
+        yield ['2023-04-29 11:58', '2023-05-28 22:28', PriceFixture::BNB_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-04-13 23:58', '2023-05-20 23:58', PriceFixture::DOT_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-04-01 00:08', '2023-05-04 23:58', PriceFixture::ELF_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-03-01 00:08', '2023-03-25 20:08', PriceFixture::ILV_REAL_MOVING_SYMBOL, 59.0, true];
+        yield ['2023-04-13 00:08', '2023-04-22 22:58', PriceFixture::AGLD_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-04-14 00:08', '2023-05-01 13:08', PriceFixture::AGLD_REAL_MOVING_SYMBOL, null, true];
+        yield ['2023-05-01 22:58', '2023-06-21 22:58', PriceFixture::BTC_REAL_MOVING_SYMBOL_2, null, true];
+        yield ['2023-05-21 22:58', '2023-06-19 22:58', PriceFixture::ETH_USDT_SYMBOL, null, true];
     }
 }

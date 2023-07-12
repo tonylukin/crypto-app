@@ -40,6 +40,8 @@ class SymbolType extends AbstractType
         $builder->add('active', CheckboxType::class, ['required' => false]);
         $builder->add('riskable', CheckboxType::class, ['required' => false]);
         $builder->add('totalPrice', TextType::class, ['required' => false]);
+        $builder->add('upperThreshold', TextType::class, ['required' => false]);
+        $builder->add('lowerThreshold', TextType::class, ['required' => false]);
     }
 
     public function getBlockPrefix(): string

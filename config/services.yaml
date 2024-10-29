@@ -29,5 +29,8 @@ services:
     App\Service\Binance\API:
 #        $apiKey: '%env(BINANCE_API_KEY)%'
 #        $apiSecret: '%env(BINANCE_API_SECRET)%'
+    App\Service\TelegramMessageSender:
+        $token: '%env(TELEGRAM_API_TOKEN)%'
+        $chatId: '%env(TELEGRAM_CHAT_ID)%'
 
     App\Service\ApiInterface: '@App\Service\Binance\API'

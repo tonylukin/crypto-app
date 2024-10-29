@@ -6,11 +6,10 @@ namespace App\Service;
 
 class TelegramMessageSender
 {
-    private string $token = '6057642569:AAGBHg09GL_R4UYfWSJRv_a-yzC94lQJpF4';
-    private int $chatId = -983228694;
-
     public function __construct(
-        private string $environmentId,
+        private readonly string $environmentId,
+        private string          $token,
+        private int             $chatId,
     ) {}
 
     public function setCredentials(TelegramCredentialsInterface $user): self
